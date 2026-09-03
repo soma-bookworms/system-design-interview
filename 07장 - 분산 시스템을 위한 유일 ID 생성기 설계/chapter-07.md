@@ -100,9 +100,8 @@ v7 버젼
     - 주문 내역
     - 피드
 # 추가 리서치 
-- 왜 signed bit (맨 앞의 0)을 넣었을까?
-    - 2010년에는 Scala, Java에 unsigned bit가 없었고, MySQL에서는 숫자를 양수로 가정했다.
-    - Java는 2014년에 출시된 Java 8부터 unsigned long 지원을 도입했다.
+- 왜 스노플래이크는 signed bit (맨 앞의 0)을 넣었을까?
+    - Snowflake가 만들어진 2010년 당시 Java와 Scala에는 `unsigned long` 타입이 없었고, `signed long` 이었기 때문에, 최상위 비트(MSB)가 1이면 값이 음수가 된다.
 - Snowflake가 strictly sortable(엄격한 순서 정렬)하지 않은 이유는?
     - 스노플래이크 요구사항은 **strictly sortable**이 아니라 **roughly sortable**이었다.
         - ID가 생성된 정확한 순서를 보장하는 것보다는 비슷한 시간에 생성된 트윗들이 ID에서도 가까운 값을 가지는 것이 중요했다.
