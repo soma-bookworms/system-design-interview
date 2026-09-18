@@ -179,7 +179,29 @@
 
 ### 타임라인 저장 노드 내부
 
-![LinkedIn FollowFeed 타임라인 저장 노드 내부](images/Linkedin-FollowFeed-타임라인-저장-노드-내부.png)
+```mermaid
+flowchart TB
+    QUERY["Broker 질의<br/>타임라인 키 묶음 / 최근 7일 / 상위 N건"]
+
+    subgraph STORAGE["followfeed-storage 노드 1대"]
+        PARTITION["담당 파티션<br/>회원 A / POST<br/>회원 B / POST<br/>회사 C / UPDATE"]
+        CACHE["메모리 캐시<br/>역직렬화된 레코드"]
+        ROCKS["RocksDB / SSD<br/>A/POST/head → blob_head → blob_7 → blob_3<br/>최근 7일과 겹치는 blob_head / blob_7만 읽음"]
+        FILTER["공개 범위 / 지역 필터"]
+        SCORE["관련도 점수 계산"]
+        TOP["로컬 상위 N건"]
+
+        PARTITION --> CACHE
+        CACHE -->|캐시 히트| FILTER
+        CACHE -->|캐시 미스| ROCKS
+        ROCKS -->|기간에 포함된 블롭만| FILTER
+        FILTER --> SCORE
+        SCORE --> TOP
+    end
+
+    QUERY --> PARTITION
+    TOP -->|상위 N건만 반환| MERGE["Broker 결과 병합"]
+```
 
 - Broker는 팔로우 대상의 타임라인 키를 저장 노드별로 묶어 한 번에 보냄. 저장 노드 하나가 사용자 한 명을 맡는 게 아니라, 여러 파티션과 그 안의 수많은 타임라인 키를 담당함
 - 노드는 먼저 메모리 캐시를 확인하고, 없으면 RocksDB에서 최신 블롭부터 요청 기간에 겹치는 부분까지만 읽음
