@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>뉴스 피드 구조도 세 장</title>
+<style>
+:root{
+  --ground:#F1F4F6; --surface:#FFFFFF;
+  --ink:#17232D; --ink-2:#4B5D6C; --ink-3:#7C8D9B; --rule:#D3DCE3;
+  --push:#9C5F17; --push-soft:#F5E9D8;
+  --pull:#146378; --pull-soft:#D9EAF0;
+  --sans:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",Pretendard,"Malgun Gothic",system-ui,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#0C141A; --surface:#131E26;
+  --ink:#E1E9EF; --ink-2:#9FB1BF; --ink-3:#6D8292; --rule:#24333D;
+  --push:#DCA055; --push-soft:#2B2015; --pull:#5EBBD6; --pull-soft:#0F2A33;}}
+:root[data-theme="dark"]{
+  --ground:#0C141A; --surface:#131E26;
+  --ink:#E1E9EF; --ink-2:#9FB1BF; --ink-3:#6D8292; --rule:#24333D;
+  --push:#DCA055; --push-soft:#2B2015; --pull:#5EBBD6; --pull-soft:#0F2A33;}
+*{box-sizing:border-box}
+html{color-scheme:light dark}
+body{margin:0;background:var(--ground);color:var(--ink);font-family:var(--sans);
+  font-size:16px;line-height:1.7;-webkit-font-smoothing:antialiased}
+.wrap{max-width:960px;margin-inline:auto;padding:0 22px}
+h1{font-size:26px;font-weight:700;letter-spacing:-.02em;margin:0 0 6px}
+h2{font-size:18px;font-weight:700;letter-spacing:-.01em;margin:0}
+.kick{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink-3);margin:0 0 10px}
+header{padding:52px 0 26px;border-bottom:1px solid var(--rule);margin-bottom:40px}
+header p{margin:0;color:var(--ink-2);font-size:14.5px;max-width:64ch}
+header b{color:var(--ink);font-weight:600}
+
+section{margin-bottom:52px}
+.fh{display:flex;align-items:baseline;gap:11px;margin-bottom:14px}
+.fh span{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--pull)}
+figure{margin:0;background:var(--surface);border:1px solid var(--rule);padding:22px 16px 12px}
+.scroll{overflow-x:auto}
+svg.d{display:block;width:100%;min-width:760px;height:auto;color:var(--ink-3)}
+
+.bx{fill:var(--surface);stroke:var(--rule);stroke-width:1}
+.tt{fill:var(--ink);font-size:12px;font-weight:600}
+.mn{fill:var(--ink-3);font-family:var(--mono);font-size:9px}
+.st{fill:var(--ink-2);font-size:10px}
+.ed{stroke:var(--ink-3);stroke-width:1.2;fill:none}
+.nt{fill:var(--ink-3);font-size:10px}
+.eb{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.09em}
+.gloss{list-style:none;padding:0;margin:20px 0 0;columns:2;column-gap:34px}
+@media(max-width:700px){.gloss{columns:1}}
+.gloss li{padding-left:15px;position:relative;font-size:13.5px;line-height:1.7;
+  color:var(--ink-2);margin-bottom:7px;break-inside:avoid}
+.gloss li::before{content:"\2022";position:absolute;left:2px;top:-1px;font-size:12px}
+.gloss li.w::before{color:var(--push)} .gloss li.r::before{color:var(--pull)}
+.gloss b{color:var(--ink);font-weight:600}
+.gloss em{font-style:normal;font-family:var(--mono);font-size:10.5px;color:var(--ink-3)}
+footer{border-top:1px solid var(--rule);padding:22px 0 56px;font-size:12.5px;color:var(--ink-3)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <p class="kick">구조도 초안</p>
+    <h1>뉴스 피드 구조도 세 장</h1>
+    <p>박스 제목은 <b>역할</b>, 아래 작은 글씨가 <b>실제 이름</b>이다 — Tweetypie·Gizmoduck 같은 건 사내 서비스 코드네임이고, Redis·Kafka·MySQL·Lucene은 오픈소스 제품이다. 같은 화법으로 맞췄다. <b>주황</b>은 피드 발행, <b>청록</b>은 뉴스 피드 생성, 겹친 사각형은 복제된 저장소, 점선은 비동기 또는 우회 경로.</p>
+  </div>
+</header>
+
+<div class="wrap">
+
+<section>
+  <div class="fh"><span>A</span><h2>Twitter 2012 — 팬아웃 + 셀럽 우회</h2></div>
+  <figure id="twitter-timeline-diagram">
+    <div class="scroll">
+    <svg class="d" viewBox="0 0 720 478" role="img" aria-label="트위터 2012 구조. 피드 발행 경로는 트윗이 요청 수신부에 들어오면 최대 145밀리초 안에 Kestrel 메시지 큐에 넣고 연결을 끊는다. 팬아웃 데몬이 큐에서 꺼내 Flock에서 팔로워 목록을 받고, 응답을 기다리지 않고 4000개씩 파이프라인으로 타임라인 캐시에 트윗 ID를 기록한다. 대형 계정은 팬아웃에서 제외된다. 뉴스 피드 생성 경로는 타임라인 조회가 캐시에서 ID 목록을 받고, 대형 계정 트윗을 읽을 때 당겨와 머지한 뒤, 트윗 본문과 유저 정보 서비스에서 병렬로 가져와 본문을 채워 클라이언트에 응답한다.">
+      <defs>
+        <marker id="ta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+        <marker id="tw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--push)"/></marker>
+        <marker id="tr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--pull)"/></marker>
+      </defs>
+
+      <text class="eb" x="24" y="22" fill="var(--push)">① 피드 발행</text>
+
+      <rect class="bx" x="24" y="38" width="92" height="44"/>
+      <text class="tt" x="70" y="56" text-anchor="middle">트윗 작성</text>
+      <text class="mn" x="70" y="72" text-anchor="middle">초당 4,000건</text>
+      <line class="ed" x1="116" y1="60" x2="154" y2="60" marker-end="url(#ta)"/>
+      <text class="nt" x="135" y="50" text-anchor="middle">글 1건</text>
+      <rect class="bx" x="158" y="38" width="84" height="44"/>
+      <text class="tt" x="200" y="56" text-anchor="middle">요청 수신부</text>
+      <text class="mn" x="200" y="72" text-anchor="middle">TFE / Ruby</text>
+      <line class="ed" x1="242" y1="60" x2="280" y2="60" marker-end="url(#ta)"/>
+      <text class="nt" x="261" y="50" text-anchor="middle">145ms</text>
+      <rect class="bx" x="284" y="38" width="116" height="44"/>
+      <text class="tt" x="342" y="56" text-anchor="middle">메시지 큐</text>
+      <text class="mn" x="342" y="72" text-anchor="middle">Kestrel</text>
+
+      <line class="ed" x1="342" y1="82" x2="342" y2="112" marker-end="url(#ta)"/>
+      <text class="nt" x="354" y="101">꺼내서 처리</text>
+      <rect class="bx" x="284" y="116" width="116" height="46"/>
+      <text class="tt" x="342" y="134" text-anchor="middle">팬아웃 데몬</text>
+      <text class="mn" x="342" y="150" text-anchor="middle">상주 워커 / 비동기</text>
+
+      <rect class="bx" x="284" y="190" width="116" height="42"/>
+      <text class="tt" x="342" y="208" text-anchor="middle" font-size="11">팔로워 관계 저장소</text>
+      <text class="mn" x="342" y="223" text-anchor="middle">FlockDB / MySQL</text>
+      <line class="ed" x1="342" y1="190" x2="342" y2="166" marker-end="url(#ta)"/>
+      <text class="nt" x="354" y="182">팔로워 목록</text>
+
+      <line x1="400" y1="139" x2="484" y2="139" stroke="var(--push)" stroke-width="3" fill="none" marker-end="url(#tw)"/>
+      <text class="eb" x="442" y="117" text-anchor="middle" fill="var(--push)">4,000개씩</text>
+      <text class="eb" x="442" y="129" text-anchor="middle" fill="var(--push)">파이프라인 전송</text>
+
+      <rect class="bx" x="486" y="74" width="200" height="106" opacity="0.35"/>
+      <rect class="bx" x="491" y="80" width="200" height="106" opacity="0.6"/>
+      <rect class="bx" x="496" y="86" width="200" height="106"/>
+      <text class="tt" x="596" y="109" text-anchor="middle" font-size="12.5">타임라인 캐시</text>
+      <text class="mn" x="596" y="125" text-anchor="middle">Redis / ×3 복제 / 인메모리 수 TB</text>
+      <line x1="512" y1="137" x2="680" y2="137" stroke="var(--rule)"/>
+      <text class="st" x="512" y="155">트윗 ID + 작성자 ID + 4바이트 플래그</text>
+      <text class="st" x="512" y="173">최대 800 엔트리 / 본문 저장 안 함</text>
+
+      <path d="M400,150 L412,150 L412,236 L424,236" stroke="var(--push)" stroke-width="1.4" fill="none" stroke-dasharray="5 4" marker-end="url(#tw)"/>
+      <text class="eb" x="418" y="206" fill="var(--push)">팬아웃 안 함</text>
+      <rect class="bx" x="428" y="213" width="132" height="46"/>
+      <text class="tt" x="494" y="231" text-anchor="middle">대형 계정</text>
+      <text class="mn" x="494" y="247" text-anchor="middle">수천만 팔로워</text>
+
+
+      <text class="eb" x="24" y="296" fill="var(--pull)">② 뉴스 피드 생성</text>
+
+      <line x1="596" y1="192" x2="596" y2="310" stroke="var(--pull)" stroke-width="1.5" fill="none" marker-end="url(#tr)"/>
+      <text class="nt" x="608" y="284">ID 목록</text>
+
+      <rect class="bx" x="500" y="314" width="190" height="46"/>
+      <text class="tt" x="595" y="332" text-anchor="middle">타임라인 조회</text>
+      <text class="mn" x="595" y="348" text-anchor="middle">Timeline Service / 해시링 선택</text>
+      <line class="ed" x1="500" y1="337" x2="476" y2="337" marker-end="url(#ta)"/>
+      <rect class="bx" x="344" y="314" width="128" height="46"/>
+      <text class="tt" x="408" y="332" text-anchor="middle">머지</text>
+      <text class="mn" x="408" y="348" text-anchor="middle">시간순 병합</text>
+
+      <line x1="460" y1="259" x2="460" y2="310" stroke="var(--pull)" stroke-width="1.5" fill="none" stroke-dasharray="5 4" marker-end="url(#tr)"/>
+      <text class="eb" x="472" y="288" fill="var(--pull)">읽을 때 당겨옴</text>
+
+      <line class="ed" x1="344" y1="337" x2="320" y2="337" marker-end="url(#ta)"/>
+      <rect class="bx" x="160" y="314" width="156" height="46"/>
+      <text class="tt" x="238" y="332" text-anchor="middle">본문 채우기</text>
+      <text class="mn" x="238" y="348" text-anchor="middle">hydration</text>
+
+      <rect class="bx" x="160" y="380" width="86" height="44"/>
+      <text class="tt" x="203" y="399" text-anchor="middle" font-size="10.5">트윗 본문 조회</text>
+      <text class="mn" x="203" y="415" text-anchor="middle">Tweetypie</text>
+      <rect class="bx" x="252" y="380" width="88" height="44"/>
+      <text class="tt" x="296" y="399" text-anchor="middle" font-size="10.5">유저 정보 조회</text>
+      <text class="mn" x="296" y="415" text-anchor="middle">Gizmoduck</text>
+      <line class="ed" x1="203" y1="360" x2="203" y2="376" marker-end="url(#ta)"/>
+      <line class="ed" x1="296" y1="360" x2="296" y2="376" marker-end="url(#ta)"/>
+      <text class="nt" x="352" y="400">병렬 multiget</text>
+
+      <line class="ed" x1="160" y1="337" x2="120" y2="337" marker-end="url(#ta)"/>
+      <text class="nt" x="140" y="327" text-anchor="middle">응답</text>
+      <rect class="bx" x="24" y="314" width="92" height="46"/>
+      <text class="tt" x="70" y="332" text-anchor="middle">클라이언트</text>
+      <text class="mn" x="70" y="348" text-anchor="middle">웹 / 모바일</text>
+
+      <path d="M70,360 L70,444 L596,444 L596,364" stroke="var(--pull)" stroke-width="1.3" fill="none" marker-end="url(#tr)"/>
+      <text class="nt" x="333" y="458" text-anchor="middle">홈 타임라인 요청</text>
+    </svg>
+    </div>
+  </figure>
+  <ul class="gloss">
+    <li class="w"><b>요청 수신부</b> <em>TFE · Twitter Front End</em> — 트윗을 받아 메시지 큐에 넣고 <b>최대 145ms 안에 연결을 끊는다.</b> 이 경로는 Ruby로 구현돼 있고, 목표는 클라이언트 연결을 최대한 빨리 놓아주는 것이다.</li>
+    <li class="w"><b>메시지 큐</b> <em>Kestrel</em> — 트위터가 직접 만들어 공개한 메시지 큐. 쓰기 요청과 팬아웃 작업을 끊어주는 지점이다. 이 큐가 있어서 팬아웃이 5분 걸려도 글쓴이는 즉시 응답을 받는다.</li>
+    <li class="w"><b>팬아웃 데몬</b> <em>fanout daemon</em> — 메시지 큐에서 꺼내 처리하는 상주 프로세스. 새 트윗을 감지해 팔로워들의 타임라인에 밀어넣는다. 메시지 큐를 거치므로 작성자는 이 작업을 기다리지 않는다. 팬아웃 목표는 5초인데 대형 계정이 글을 쓰면 못 맞춘다. 캐시에 쓸 때는 응답을 기다리지 않고 <b>4,000개씩 연달아 쏜다</b>(파이프라이닝) — 병목이 Redis 처리 속도가 아니라 네트워크 왕복 시간이기 때문.</li>
+    <li class="w"><b>팔로워 관계 저장소</b> <em>Flock · FlockDB</em> — 팔로우 관계만 저장하는 전용 DB. MySQL 위에 엣지를 인접 리스트로 얹었다. “A의 팔로워 전부”를 빠르게 주는 게 목적이고, 다단 탐색은 지원하지 않는다. 2010년 4월 엣지 130억+.</li>
+    <li class="w"><b>타임라인 캐시</b> <em>Redis</em> — 회원마다 “내 타임라인에 뜰 트윗 ID 목록”을 들고 있다. 본문은 없다.</li>
+    <li class="w"><b>대형 계정</b> — 팔로워가 너무 많아 팬아웃 대상에서 뺀 계정. 이 트윗은 읽을 때 따로 가져온다.</li>
+    <li class="r"><b>타임라인 조회</b> <em>Timeline Service</em> — 요청한 회원의 ID 목록을 Redis에서 꺼내온다. 복제본 3벌 중 어디서 읽을지 해시링으로 고른다.</li>
+    <li class="r"><b>머지</b> — Redis에서 온 목록에 대형 계정 트윗을 시간순으로 끼워넣는다. push와 pull이 여기서 합쳐진다.</li>
+    <li class="r"><b>본문 채우기</b> <em>hydration</em> — ID만 있는 목록을 실제 트윗 내용과 작성자 정보로 채운다.</li>
+    <li class="r"><b>트윗 본문 조회</b> <em>Tweetypie · Twemcache</em> — 트윗 읽기·쓰기 서비스. 최근 한 달 반치를 별도 분산 캐시 클러스터에 올려둔다.</li>
+    <li class="r"><b>유저 정보 조회</b> <em>Gizmoduck · Twemcache</em> — 이름·프로필 등을 제공하는 사용자 서비스. 별도 분산 캐시 클러스터를 쓴다.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="fh"><span>B</span><h2>LinkedIn FollowFeed — 팬아웃 없음</h2></div>
+  <figure id="linkedin-followfeed-diagram">
+    <div class="scroll">
+    <svg class="d" viewBox="0 0 736 446" role="img" aria-label="링크드인 FollowFeed 구조. 발행 경로는 활동 이벤트가 Kafka 스트림과 Partitioner를 거쳐 타임라인 인덱스에 저장된다. 생성 경로에서는 상위 서비스가 팔로우한 회원, 회사, 학교 목록을 조회해 Feed Mixer와 조회 브로커에 전달한다. 브로커가 인덱스 노드들에 동시 질의하고, 각 노드가 필터와 점수 계산 후 상위 N건만 반환하면 브로커가 합쳐 올려보낸다.">
+      <defs>
+        <marker id="la" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+        <marker id="lw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--push)"/></marker>
+        <marker id="lr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--pull)"/></marker>
+      </defs>
+
+      <text class="eb" x="24" y="26" fill="var(--push)">① 피드 발행</text>
+
+      <rect class="bx" x="24" y="44" width="120" height="46"/>
+      <text class="tt" x="84" y="62" text-anchor="middle">활동 생성</text>
+      <text class="mn" x="84" y="78" text-anchor="middle">공유/좋아요/댓글</text>
+      <line class="ed" x1="144" y1="67" x2="186" y2="67" marker-end="url(#la)"/>
+      <text class="nt" x="165" y="57" text-anchor="middle">이벤트 1건</text>
+      <rect class="bx" x="190" y="44" width="160" height="46"/>
+      <text class="tt" x="270" y="62" text-anchor="middle">활동 변경 스트림</text>
+      <text class="mn" x="270" y="78" text-anchor="middle">Kafka / 콘텐츠 생성/수정</text>
+      <line class="ed" x1="350" y1="67" x2="392" y2="67" marker-end="url(#la)"/>
+      <rect class="bx" x="396" y="44" width="156" height="46"/>
+      <text class="tt" x="474" y="62" text-anchor="middle">파티션 배분</text>
+      <text class="mn" x="474" y="78" text-anchor="middle">Partitioner / 범위별 재발행</text>
+
+      <rect class="bx" x="190" y="114" width="160" height="42"/>
+      <text class="tt" x="270" y="132" text-anchor="middle">랭킹 신호 스트림</text>
+      <text class="mn" x="270" y="147" text-anchor="middle">Kafka / 품질/랭킹 피처</text>
+
+      <path d="M474,90 L474,158 L600,158 L600,190" stroke="var(--push)" stroke-width="3" fill="none" marker-end="url(#lw)"/>
+      <text class="eb" x="486" y="148" fill="var(--push)">담당 범위만 구독</text>
+      <path d="M350,135 L430,135 L430,170 L540,170 L540,190" stroke="var(--push)" stroke-width="1.4" fill="none" stroke-dasharray="5 4" marker-end="url(#lw)"/>
+      <text class="nt" x="390" y="127" text-anchor="middle">별도 재파티션 후 적재</text>
+
+      <rect class="bx" x="490" y="180" width="212" height="112" opacity="0.35"/>
+      <rect class="bx" x="495" y="186" width="212" height="112" opacity="0.6"/>
+      <rect class="bx" x="500" y="192" width="212" height="112"/>
+      <text class="tt" x="606" y="215" text-anchor="middle" font-size="12.5">타임라인 인덱스</text>
+      <text class="mn" x="606" y="231" text-anchor="middle">followfeed-storage</text>
+      <line x1="516" y1="243" x2="696" y2="243" stroke="var(--rule)"/>
+      <text class="st" x="516" y="261">RocksDB / 블롭 연결 리스트</text>
+      <text class="st" x="516" y="277">필터 → 점수 계산 → 상위 N건</text>
+      <text class="st" x="516" y="293">720 파티션 / 머신당 20개 / 레플리카 4벌</text>
+
+
+      <text class="eb" x="24" y="322" fill="var(--pull)">② 뉴스 피드 생성</text>
+
+      <rect class="bx" x="340" y="272" width="136" height="42"/>
+      <text class="tt" x="408" y="290" text-anchor="middle">관심 대상 조회</text>
+      <text class="mn" x="408" y="305" text-anchor="middle">회원/회사/학교</text>
+      <line class="ed" x1="408" y1="314" x2="408" y2="343" marker-end="url(#la)"/>
+      <text class="nt" x="420" y="332">팔로우 목록</text>
+
+      <rect class="bx" x="24" y="347" width="92" height="46"/>
+      <text class="tt" x="70" y="365" text-anchor="middle">클라이언트</text>
+      <text class="mn" x="70" y="381" text-anchor="middle">웹 / 모바일</text>
+      <line class="ed" x1="116" y1="370" x2="352" y2="370" marker-end="url(#la)"/>
+      <text class="nt" x="234" y="360" text-anchor="middle">홈 피드 요청</text>
+      <rect class="bx" x="356" y="347" width="152" height="46"/>
+      <text class="tt" x="432" y="365" text-anchor="middle">피드 조립</text>
+      <text class="mn" x="432" y="381" text-anchor="middle">Feed Mixer / 후보 통합/2차 정렬</text>
+      <line class="ed" x1="508" y1="370" x2="536" y2="370" marker-end="url(#la)"/>
+      <rect class="bx" x="540" y="347" width="142" height="46"/>
+      <text class="tt" x="611" y="365" text-anchor="middle">타임라인 조회</text>
+      <text class="mn" x="611" y="381" text-anchor="middle">Broker / followfeed-query</text>
+
+      <line x1="586" y1="347" x2="586" y2="310" stroke="var(--pull)" stroke-width="3" fill="none" marker-end="url(#lr)"/>
+      <text class="eb" x="574" y="332" text-anchor="end" fill="var(--pull)">동시 질의</text>
+      <line x1="640" y1="310" x2="640" y2="347" stroke="var(--pull)" stroke-width="1.5" fill="none" marker-end="url(#lr)"/>
+      <text class="eb" x="652" y="332" fill="var(--pull)">상위 N건</text>
+
+      <path d="M432,393 L432,416 L70,416 L70,397" stroke="var(--pull)" stroke-width="1.3" fill="none" marker-end="url(#lr)"/>
+      <text class="nt" x="251" y="430" text-anchor="middle">완성된 피드</text>
+
+    </svg>
+    </div>
+  </figure>
+  <ul class="gloss">
+    <li class="w"><b>활동 변경 스트림</b> <em>Kafka</em> — 공유·좋아요·댓글 등 콘텐츠의 생성·수정 이벤트가 지나가는 통로.</li>
+    <li class="w"><b>랭킹 신호 스트림</b> <em>Kafka</em> — 품질 판정과 점수 계산에 쓰는 피처가 흐르는 별도 통로.</li>
+    <li class="w"><b>파티션 배분</b> <em>Partitioner</em> — 이벤트를 각 노드가 담당하는 파티션 번호 범위에 맞춰 다시 내보낸다. 덕분에 노드는 “어디로 보낼지” 판단할 필요가 없다.</li>
+    <li class="r"><b>관심 대상 조회</b> — 상위 관계 서비스에서 열람자가 팔로우한 회원·회사·학교 목록을 받아온다. FollowFeed 바깥의 의존성이다.</li>
+    <li class="r"><b>타임라인 인덱스</b> <em>followfeed-storage</em> — 타임라인을 저장하고, 볼 권한 확인과 점수 계산까지 노드 안에서 끝내 상위 몇 건만 올린다.</li>
+    <li class="r"><b>타임라인 조회</b> <em>Broker / followfeed-query</em> — 어느 노드에 물어야 하는지 계산해 동시에 질의하고, 돌아온 결과를 합쳐 중복을 제거한다.</li>
+    <li class="r"><b>피드 조립</b> <em>Feed Mixer</em> — FollowFeed 위의 중간 서비스. 여러 후보 목록을 하나로 합치고, 같은 작성자 글이 연달아 나오지 않도록 최종 순서를 조정한다.</li>
+    <li class="r"><b>D2</b> — 지금 살아 있는 노드 주소를 Zookeeper에서 조회하는 장치. 노드가 죽거나 늘어나도 브로커를 다시 배포할 필요가 없다.</li>
+  </ul>
+</section>
+
+<section>
+  <div class="fh"><span>C</span><h2>LinkedIn FollowFeed — 타임라인 저장 노드 내부</h2></div>
+  <figure id="timeline-storage-node-diagram">
+    <div class="scroll">
+    <svg class="d" viewBox="0 0 736 404" role="img" aria-label="FollowFeed 저장 노드 내부. Broker가 여러 타임라인 키를 한 번에 보내면 노드가 담당 파티션에서 키를 찾고 메모리 캐시를 확인한다. 캐시 미스이면 RocksDB의 최신 블롭부터 필요한 기간까지만 읽는다. 공개 범위와 지역을 필터링하고 관련도 점수를 계산한 뒤 로컬 상위 N건만 Broker에 반환한다.">
+      <defs>
+        <marker id="sa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="currentColor"/></marker>
+        <marker id="sr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--pull)"/></marker>
+      </defs>
+
+      <rect x="174" y="20" width="538" height="360" rx="3" fill="none" stroke="var(--pull)" stroke-width="1.4"/>
+      <text class="eb" x="194" y="44" fill="var(--pull)">followfeed-storage 노드 1대</text>
+
+      <rect class="bx" x="20" y="154" width="126" height="76"/>
+      <text class="tt" x="83" y="176" text-anchor="middle">Broker</text>
+      <text class="mn" x="83" y="193" text-anchor="middle">최근 7일 / 상위 N건</text>
+      <text class="mn" x="83" y="209" text-anchor="middle">결과 병합</text>
+
+      <rect class="bx" x="194" y="66" width="146" height="112"/>
+      <text class="tt" x="267" y="87" text-anchor="middle">담당 파티션</text>
+      <text class="mn" x="267" y="103" text-anchor="middle">타임라인 키 수천 개</text>
+      <line x1="208" y1="114" x2="326" y2="114" stroke="var(--rule)"/>
+      <text class="st" x="208" y="132">회원 A / POST</text>
+      <text class="st" x="208" y="148">회원 B / POST</text>
+      <text class="st" x="208" y="164">회사 C / UPDATE</text>
+
+      <rect class="bx" x="374" y="80" width="136" height="66"/>
+      <text class="tt" x="442" y="104" text-anchor="middle">메모리 캐시</text>
+      <text class="mn" x="442" y="121" text-anchor="middle">역직렬화된 레코드</text>
+      <text class="mn" x="442" y="136" text-anchor="middle">cache hit</text>
+
+      <rect class="bx" x="194" y="222" width="316" height="126"/>
+      <text class="tt" x="210" y="245">RocksDB / SSD</text>
+      <text class="mn" x="330" y="245">A/POST/head → blob_head</text>
+
+      <rect class="bx" x="210" y="264" width="84" height="58"/>
+      <text class="tt" x="252" y="285" text-anchor="middle" font-size="10.5">blob_head</text>
+      <text class="mn" x="252" y="302" text-anchor="middle">9/18~9/15</text>
+      <text class="mn" x="252" y="315" text-anchor="middle">120건</text>
+      <line class="ed" x1="294" y1="293" x2="310" y2="293" marker-end="url(#sa)"/>
+      <rect class="bx" x="314" y="264" width="80" height="58"/>
+      <text class="tt" x="354" y="285" text-anchor="middle" font-size="10.5">blob_7</text>
+      <text class="mn" x="354" y="302" text-anchor="middle">9/14~9/08</text>
+      <text class="mn" x="354" y="315" text-anchor="middle">200건</text>
+      <line class="ed" x1="394" y1="293" x2="410" y2="293" marker-end="url(#sa)"/>
+      <rect class="bx" x="414" y="264" width="80" height="58" opacity="0.45"/>
+      <text class="tt" x="454" y="285" text-anchor="middle" font-size="10.5" opacity="0.55">blob_3</text>
+      <text class="mn" x="454" y="302" text-anchor="middle" opacity="0.65">9/07~8/31</text>
+      <text class="mn" x="454" y="315" text-anchor="middle" opacity="0.65">읽지 않음</text>
+      <text class="nt" x="352" y="339" text-anchor="middle">블롭의 시각 범위로 기간 밖 데이터는 건너뜀</text>
+
+      <rect class="bx" x="554" y="68" width="136" height="52"/>
+      <text class="tt" x="622" y="89" text-anchor="middle">공개 범위 / 지역 필터</text>
+      <text class="mn" x="622" y="106" text-anchor="middle">볼 수 없는 항목 제거</text>
+      <rect class="bx" x="554" y="154" width="136" height="52"/>
+      <text class="tt" x="622" y="175" text-anchor="middle">관련도 점수 계산</text>
+      <text class="mn" x="622" y="192" text-anchor="middle">질의 시점 피처 / 모델</text>
+      <rect class="bx" x="554" y="240" width="136" height="52"/>
+      <text class="tt" x="622" y="261" text-anchor="middle">로컬 상위 N건</text>
+      <text class="mn" x="622" y="278" text-anchor="middle">노드 안에서 축소</text>
+
+      <line x1="146" y1="176" x2="190" y2="176" stroke="var(--pull)" stroke-width="2" marker-end="url(#sr)"/>
+      <text class="nt" x="168" y="165" text-anchor="middle">키 묶음</text>
+      <line class="ed" x1="340" y1="113" x2="370" y2="113" marker-end="url(#sa)"/>
+      <path class="ed" d="M442,146 L442,218" marker-end="url(#sa)"/>
+      <text class="nt" x="451" y="188">캐시 미스</text>
+      <path d="M510,113 L532,113 L532,94 L550,94" stroke="var(--pull)" stroke-width="1.5" fill="none" marker-end="url(#sr)"/>
+      <text class="nt" x="526" y="85" text-anchor="middle">캐시 히트</text>
+      <path d="M294,264 L294,208 L536,208 L536,112 L550,112" stroke="var(--pull)" stroke-width="1.5" fill="none" marker-end="url(#sr)"/>
+      <text class="nt" x="405" y="200" text-anchor="middle">기간에 포함된 블롭만 읽기</text>
+      <line class="ed" x1="622" y1="120" x2="622" y2="150" marker-end="url(#sa)"/>
+      <line class="ed" x1="622" y1="206" x2="622" y2="236" marker-end="url(#sa)"/>
+      <path d="M554,266 L530,266 L530,364 L83,364 L83,234" stroke="var(--pull)" stroke-width="2" fill="none" marker-end="url(#sr)"/>
+      <text class="eb" x="310" y="356" text-anchor="middle" fill="var(--pull)">상위 N건만 반환</text>
+    </svg>
+    </div>
+  </figure>
+</section>
+
+</div>
+
+<footer>
+  <div class="wrap">두 구조도는 같은 시각 규칙을 쓴다 — 주황=쓰기·발행, 청록=읽기·생성, 겹친 사각형=복제 저장소, 점선=비동기·우회.</div>
+</footer>
+
+</body>
+</html>
