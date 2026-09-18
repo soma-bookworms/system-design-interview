@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>알림 시스템 설계 (책 정리)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#F3F4F7; --panel:#FFFFFF; --panel-2:#F7F8FB;
+  --ink:#12161F; --ink-2:#4F586B; --ink-3:#8A92A5;
+  --line:#DCE0E8; --line-soft:#E9ECF2; --line-strong:#B7BECC;
+  --accent:#2F5FD0; --bad:#C0504F; --edge:#6B7488;
+  --tag-book-bg:#E6ECF7; --tag-book:#3A5A9E;
+  --tag-mine-bg:#FBEFD9; --tag-mine:#8A5A12;
+  --k-src:#EEF0F4; --k-src-s:#A9B1C0;
+  --k-app:#E4EBFA; --k-app-s:#6F8AC7;
+  --k-q:#FBF0DA;   --k-q-s:#C49A4A;
+  --k-fn:#FBE7DC;  --k-fn-s:#CF7B4E;
+  --k-ext:#DFF0F2; --k-ext-s:#4B98A6;
+  --k-dev:#FFFFFF; --k-dev-s:#8E96A8;
+  --k-db:#ECE6F6;  --k-db-s:#8A71B6;
+  --k-sch:#E1F1E7; --k-sch-s:#4E9A6F;
+  --k-st:#F7F8FB;  --k-st-s:#9AA2B3;
+  --k-err:#F9E3E2; --k-err-s:#C0504F;
+  --f-ui:'IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0B0E14; --panel:#12161E; --panel-2:#171C26;
+    --ink:#E7EAF1; --ink-2:#A3AABB; --ink-3:#6C7486;
+    --line:#242A38; --line-soft:#1B212C; --line-strong:#3A4254;
+    --accent:#7C9CF0; --bad:#E27A78; --edge:#8A93A8;
+    --tag-book-bg:#1C2640; --tag-book:#9DB4EA;
+    --tag-mine-bg:#33260F; --tag-mine:#E3B76A;
+    --k-src:#1A1F2A; --k-src-s:#4A5366;
+    --k-app:#172440; --k-app-s:#5877BD;
+    --k-q:#2E2412;   --k-q-s:#B08840;
+    --k-fn:#33200F;  --k-fn-s:#C27446;
+    --k-ext:#10292E; --k-ext-s:#4491A0;
+    --k-dev:#12161E; --k-dev-s:#6C7486;
+    --k-db:#231C33;  --k-db-s:#8A71B6;
+    --k-sch:#122A1C; --k-sch-s:#4E9A6F;
+    --k-st:#171C26;  --k-st-s:#4A5366;
+    --k-err:#321717; --k-err-s:#D96A68;
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--f-ui); font-size:15.5px; line-height:1.75; -webkit-font-smoothing:antialiased; word-break:keep-all}
+.wrap{max-width:1100px; margin:0 auto; padding:40px 20px 96px}
+a{color:var(--accent); text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* header */
+.hero{padding-bottom:28px; border-bottom:1px solid var(--line)}
+.eyebrow{font-size:12px; font-weight:600; letter-spacing:.12em; color:var(--ink-3)}
+.hero h1{font-size:38px; line-height:1.25; margin:6px 0 12px; letter-spacing:-.01em}
+.lede{color:var(--ink-2); max-width:760px; margin:0 0 18px}
+.legend{display:flex; flex-wrap:wrap; gap:8px 18px; align-items:center; font-size:13px; color:var(--ink-2)}
+.legend .sw{display:inline-block; width:14px; height:14px; border-radius:3px; border:1.3px solid; vertical-align:-2px; margin-right:6px}
+
+/* tags */
+.tag{display:inline-block; font-size:11.5px; font-weight:600; line-height:1; padding:4px 7px; border-radius:4px; vertical-align:middle}
+.tag.book{background:var(--tag-book-bg); color:var(--tag-book)}
+.tag.mine{background:var(--tag-mine-bg); color:var(--tag-mine)}
+
+/* toc */
+.toc{margin:28px 0 8px; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:18px 22px}
+.toc h2{font-size:13px; letter-spacing:.1em; color:var(--ink-3); margin:0 0 8px; border:0; padding:0}
+.toc ol{margin:0; padding-left:22px; columns:2; column-gap:40px}
+.toc li{break-inside:avoid; padding:3px 0}
+.toc li .tag{margin-left:6px}
+
+/* sections */
+section{padding-top:56px}
+h2{font-size:26px; line-height:1.35; margin:0 0 6px; padding-top:18px; border-top:2px solid var(--ink); display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+h2 .no{font-family:var(--f-mono); font-size:15px; font-weight:500; color:var(--ink-3)}
+h3{font-size:19px; line-height:1.4; margin:36px 0 8px; display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+p, ul, ol{max-width:800px}
+p{margin:8px 0 12px}
+ul, ol{padding-left:22px; margin:8px 0 14px}
+li{margin:3px 0}
+.sub{color:var(--ink-2); margin-top:0}
+code{font-family:var(--f-mono); font-size:.88em; background:var(--panel-2); border:1px solid var(--line-soft); border-radius:4px; padding:1px 5px}
+pre{font-family:var(--f-mono); font-size:13px; line-height:1.6; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:14px 18px; overflow-x:auto; max-width:800px}
+
+/* callout */
+.callout{max-width:800px; background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:6px; padding:12px 16px; margin:16px 0; color:var(--ink-2)}
+.callout b{color:var(--ink)}
+
+/* tables */
+.tbl{overflow-x:auto; margin:12px 0 18px; border:1px solid var(--line); border-radius:8px; background:var(--panel)}
+table{border-collapse:collapse; width:100%; font-size:14px; line-height:1.6}
+th, td{text-align:left; vertical-align:top; padding:9px 14px; border-bottom:1px solid var(--line-soft)}
+th{background:var(--panel-2); font-weight:600; color:var(--ink-2); font-size:13px; white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:600; white-space:nowrap}
+.tbl.wrap1 td:first-child{white-space:normal; min-width:120px}
+.num td:not(:first-child){font-family:var(--f-mono); font-size:13.5px}
+.schema{display:flex; gap:16px; flex-wrap:wrap}
+.schema .tbl{flex:1 1 300px; margin:8px 0}
+.schema td:last-child{font-family:var(--f-mono); color:var(--ink-3); font-size:13px}
+
+/* figures */
+figure{margin:18px 0 22px; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:16px 16px 10px}
+.diag{overflow-x:auto; -webkit-overflow-scrolling:touch}
+figcaption{font-size:13px; color:var(--ink-3); text-align:center; margin-top:6px}
+svg.dg{display:block; width:100%; height:auto; font-family:var(--f-ui)}
+.dg .grp{fill:none; stroke:var(--line-strong); stroke-dasharray:5 4; stroke-width:1.2}
+.dg .grp-t{font-size:12px; font-weight:600; fill:var(--ink-3)}
+.dg .nd rect{stroke-width:1.3}
+.dg .nt{font-size:13px; font-weight:600; fill:var(--ink)}
+.dg .ns{font-size:11px; fill:var(--ink-2)}
+.dg .edge{fill:none; stroke:var(--edge); stroke-width:1.4}
+.dg .dash{stroke-dasharray:5 4}
+.dg .ah{fill:var(--edge)}
+.dg .el rect{fill:var(--panel)}
+.dg .et{font-size:11.5px; fill:var(--ink-2)}
+.dg .note{font-size:12px; fill:var(--ink-3)}
+.dg .warn{font-size:12px; font-weight:600; fill:var(--bad)}
+.k-src rect{fill:var(--k-src); stroke:var(--k-src-s)}
+.k-app rect{fill:var(--k-app); stroke:var(--k-app-s)}
+.k-q rect{fill:var(--k-q); stroke:var(--k-q-s)}
+.k-fn rect{fill:var(--k-fn); stroke:var(--k-fn-s)}
+.k-ext rect{fill:var(--k-ext); stroke:var(--k-ext-s)}
+.k-dev rect{fill:var(--k-dev); stroke:var(--k-dev-s)}
+.k-db rect{fill:var(--k-db); stroke:var(--k-db-s)}
+.k-sch rect{fill:var(--k-sch); stroke:var(--k-sch-s)}
+.k-st rect{fill:var(--k-st); stroke:var(--k-st-s)}
+.k-err rect{fill:var(--k-err); stroke:var(--k-err-s)}
+
+@media (max-width:720px){
+  .wrap{padding:28px 16px 72px}
+  .hero h1{font-size:30px}
+  .toc ol{columns:1}
+  h2{font-size:22px}
+}
+</style>
+<script>function dg(id,s){(window.DIAG||(window.DIAG={}))[id]=s}</script>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <span class="eyebrow">대규모 시스템 설계 기초 10장</span>
+  <h1>알림 시스템 설계</h1>
+  <p class="lede">책 10장(165~181쪽)의 내용을 정리한 문서다. 책에 실린 설계와 수치만 담았다.</p>
+</header>
+
+<nav class="toc">
+  <h2>목차</h2>
+  <ol>
+    <li><a href="#s1">요구사항 확정</a></li>
+    <li><a href="#s2">알림 유형별 지원 방안</a></li>
+    <li><a href="#s3">연락처 정보 수집 절차</a></li>
+    <li><a href="#s4">알림 전송 및 수신 절차</a></li>
+    <li><a href="#s5">안정성</a></li>
+    <li><a href="#s6">추가 구성 요소</a></li>
+    <li><a href="#s7">수정된 설계안</a></li>
+    <li><a href="#s8">마무리</a></li>
+    <li><a href="#s9">참고문헌</a></li>
+  </ol>
+</nav>
+
+<section id="s1">
+  <h2><span class="no">01</span>요구사항 확정</h2>
+  <p>면접관과 나눈 질의응답으로 다음 요구사항을 확정한다. 하루 백만 건 이상을 처리하는 시스템이라 요구사항을 먼저 좁힌다.</p>
+  <div class="tbl wrap1"><table>
+    <tr><th>항목</th><th>내용</th></tr>
+    <tr><td>알림 종류</td><td>푸시 알림, SMS 메시지, 이메일</td></tr>
+    <tr><td>실시간성</td><td>연성 실시간(soft real-time) 시스템. 높은 부하에서는 약간의 지연을 허용한다.</td></tr>
+    <tr><td>지원 단말</td><td>iOS 단말, 안드로이드 단말, 랩톱과 데스크톱</td></tr>
+    <tr><td>알림 생성 주체</td><td>클라이언트 애플리케이션과 서버 측 스케줄링</td></tr>
+    <tr><td>수신 거부</td><td>수신 거부(opt-out)를 마친 사용자에게는 더 이상 보내지 않는다.</td></tr>
+    <tr><td>일일 발송량</td><td>모바일 푸시 알림 천만 건, SMS 메시지 백만 건, 이메일 5백만 건</td></tr>
+  </table></div>
+</section>
+
+<section id="s2">
+  <h2><span class="no">02</span>알림 유형별 지원 방안</h2>
+
+  <h3>iOS 푸시 알림</h3>
+  <p>세 가지 구성 요소가 필요하다. 알림 제공자는 알림 요청을 만들어 애플 푸시 알림 서비스(APNS)로 보내는 주체다. 요청을 만들려면 단말 토큰과 페이로드가 있어야 한다. 단말 토큰은 알림 요청을 보내는 데 필요한 고유 식별자이고, 페이로드는 알림 내용을 담은 JSON 딕셔너리다.</p>
+<pre>{
+  "aps": {
+    "alert": {
+      "title": "Game Request",
+      "body": "Bob wants to play chess",
+      "action-loc-key": "PLAY"
+    },
+    "badge": 5
+  }
+}</pre>
+  <p>APNS는 애플이 운영하는 원격 서비스로 푸시 알림을 iOS 장치까지 보내는 역할을 맡는다. iOS 단말은 푸시 알림을 수신하는 사용자 단말이다.</p>
+
+  <h3>안드로이드 푸시 알림</h3>
+  <p>절차는 iOS와 같고 APNS 대신 FCM(Firebase Cloud Messaging)을 사용한다.</p>
+
+  <h3>SMS 메시지</h3>
+  <p>트윌리오(Twilio)나 넥스모(Nexmo) 같은 제3자 사업자의 서비스를 주로 이용한다. 대부분 상용 서비스라 이용 요금을 낸다.</p>
+
+  <h3>이메일</h3>
+  <p>대부분의 회사는 고유 이메일 서버를 구축할 역량을 갖추고 있다. 그럼에도 센드그리드(Sendgrid)나 메일침프(Mailchimp) 같은 상용 서비스를 쓰는 회사가 많다. 전송 성공률이 높고 데이터 분석 기능도 함께 쓸 수 있기 때문이다.</p>
+
+  <figure>
+    <div class="diag" data-diag="f106"></div>
+    <figcaption>그림 10-6 알림 유형 전부를 한 시스템으로 묶은 결과</figcaption>
+  </figure>
+  <script>dg('f106',{w:760,h:330,n:[
+    ['tp',190,15,200,300,'grp','제3자 제공 서비스','b'],
+    ['apns',210,35,160,46,'ext','APNS'],
+    ['fcm',210,105,160,46,'ext','FCM'],
+    ['sms',210,175,160,46,'ext','SMS 서비스'],
+    ['mail',210,245,160,46,'ext','이메일 서비스'],
+    ['ios',450,35,180,46,'dev','iOS 단말'],
+    ['and',450,105,180,46,'dev','안드로이드 단말'],
+    ['smsd',450,175,180,46,'dev','SMS 단말'],
+    ['maild',450,245,180,46,'dev','이메일 수신 단말']
+  ],e:[['apns','ios'],['fcm','and'],['sms','smsd'],['mail','maild']]})</script>
+</section>
+
+<section id="s3">
+  <h2><span class="no">03</span>연락처 정보 수집 절차</h2>
+  <p>알림을 보내려면 모바일 단말 토큰과 전화번호, 이메일 주소가 있어야 한다. 사용자가 앱을 설치하거나 처음으로 계정을 등록하면 API 서버가 해당 정보를 수집해 데이터베이스에 저장한다.</p>
+  <figure>
+    <div class="diag" data-diag="f107"></div>
+    <figcaption>그림 10-7 연락처 정보 수집 경로</figcaption>
+  </figure>
+  <script>dg('f107',{w:760,h:170,n:[
+    ['dev',20,55,140,60,'dev','사용자 단말'],
+    ['lb',220,55,130,60,'app','로드밸런서'],
+    ['api',410,55,140,60,'app','API 서버'],
+    ['db',610,55,130,60,'db','데이터베이스']
+  ],e:[['dev','lb','앱 설치 또는 계정 등록'],['lb','api'],['api','db','연락처 정보 저장']]})</script>
+  <p>이메일 주소와 전화번호는 user 테이블에 저장하고 단말 토큰은 device 테이블에 저장한다. 사용자 한 명이 단말 여러 대를 가질 수 있고, 알림은 모든 단말에 전송해야 한다는 점을 고려한 구조다.</p>
+  <div class="schema">
+    <div class="tbl"><table>
+      <tr><th colspan="2">user</th></tr>
+      <tr><td>user_id</td><td>bigint</td></tr>
+      <tr><td>email</td><td>varchar</td></tr>
+      <tr><td>country_code</td><td>integer</td></tr>
+      <tr><td>phone_number</td><td>integer</td></tr>
+      <tr><td>created_at</td><td>timestamp</td></tr>
+    </table></div>
+    <div class="tbl"><table>
+      <tr><th colspan="2">device</th></tr>
+      <tr><td>id</td><td>bigint</td></tr>
+      <tr><td>device_token</td><td>varchar</td></tr>
+      <tr><td>user_id</td><td>bigint</td></tr>
+      <tr><td>last_logged_in_at</td><td>timestamp</td></tr>
+    </table></div>
+  </div>
+</section>
+
+<section id="s4">
+  <h2><span class="no">04</span>알림 전송 및 수신 절차</h2>
+
+  <h3>개략적 설계안 초안</h3>
+  <figure>
+    <div class="diag" data-diag="draft"></div>
+    <figcaption>그림 10-9 개략적 설계 초안</figcaption>
+  </figure>
+  <script>dg('draft',{w:880,h:330,n:[
+    ['s1',20,40,110,44,'src','서비스 1'],
+    ['s2',20,130,110,44,'src','서비스 2'],
+    ['dots',20,178,110,40,'note','⋮'],
+    ['sn',20,222,110,44,'src','서비스 N'],
+    ['ns',210,120,130,64,'app','알림 시스템','서버 1대'],
+    ['wr',190,200,170,40,'warn','SPOF, 확장 한계, 병목'],
+    ['tp',430,15,170,300,'grp','제3자 서비스','b'],
+    ['apns',455,35,120,44,'ext','APNs'],
+    ['fcm',455,100,120,44,'ext','FCM'],
+    ['sms',455,165,120,44,'ext','SMS 서비스'],
+    ['mail',455,230,120,44,'ext','이메일 서비스'],
+    ['ios',690,35,160,44,'dev','iOS 단말'],
+    ['and',690,100,160,44,'dev','안드로이드 단말'],
+    ['smsd',690,165,160,44,'dev','SMS 수신 단말'],
+    ['maild',690,230,160,44,'dev','이메일 수신 단말']
+  ],e:[
+    ['s1','ns'],['s2','ns'],['sn','ns'],
+    ['ns','apns'],['ns','fcm'],['ns','sms'],['ns','mail'],
+    ['apns','ios'],['fcm','and'],['sms','smsd'],['mail','maild']
+  ]})</script>
+  <ul>
+    <li>1부터 N까지의 서비스: 마이크로서비스나 크론잡, 분산 시스템 구성 요소다. 납기일을 알리는 과금 서비스나 배송 알림을 보내는 쇼핑몰이 그 예다.</li>
+    <li>알림 시스템: 알림 전송과 수신 처리의 핵심이다. 우선 서버 한 대만 사용한다고 가정한다. 서비스 1~N에 알림 전송용 API를 열어주고 제3자 서비스에 전달할 페이로드를 만든다.</li>
+    <li>제3자 서비스: 사용자에게 알림을 실제로 전달한다. 통합할 때 유의할 점은 확장성이다. 새로운 서비스를 쉽게 붙이거나 뗄 수 있어야 한다. 어떤 서비스는 다른 시장에서 쓸 수 없다. FCM은 중국에서 사용할 수 없어 중국 시장에서는 제이푸시(Jpush)나 푸시와이(PushY)를 쓴다.</li>
+    <li>iOS/안드로이드/SMS/이메일 단말: 사용자는 자기 단말에서 알림을 수신한다.</li>
+  </ul>
+  <div class="tbl wrap1"><table>
+    <tr><th>문제</th><th>내용</th></tr>
+    <tr><td>SPOF</td><td>알림 서비스에 서버가 하나뿐이라 그 서버에 장애가 생기면 전체 서비스의 장애로 이어진다.</td></tr>
+    <tr><td>규모 확장</td><td>한 대가 푸시 알림에 관계된 모든 것을 처리하므로 데이터베이스나 캐시 같은 중요 구성 요소의 규모를 개별적으로 늘릴 방법이 없다.</td></tr>
+    <tr><td>성능 병목</td><td>알림을 처리하고 보내는 일은 자원을 많이 쓴다. HTML 페이지를 만들고 제3자 서비스의 응답을 기다리는 데 시간이 걸리므로, 모든 것을 한 서버로 처리하면 사용자 트래픽이 몰리는 시간에 과부하 상태에 빠진다.</td></tr>
+  </table></div>
+
+  <h3>개선된 설계안</h3>
+  <ol>
+    <li>데이터베이스와 캐시를 알림 시스템의 주 서버에서 분리한다.</li>
+    <li>알림 서버를 증설하고 자동으로 수평적 규모 확장이 이루어지도록 한다.</li>
+    <li>메시지 큐를 이용해 시스템 구성 요소 사이의 강한 결합을 끊는다.</li>
+  </ol>
+  <figure>
+    <div class="diag" data-diag="improved"></div>
+    <figcaption>그림 10-10 개선된 설계안</figcaption>
+  </figure>
+  <script>dg('improved',{w:1000,h:410,n:[
+    ['s1',10,80,100,42,'src','서비스 1'],
+    ['s2',10,170,100,42,'src','서비스 2'],
+    ['dots',10,214,100,40,'note','⋮'],
+    ['sn',10,258,100,42,'src','서비스 N'],
+    ['ns',150,166,110,50,'app','알림 서버'],
+    ['cache',150,272,110,42,'db','캐시'],
+    ['db',150,350,110,42,'db','데이터베이스'],
+    ['q1',310,60,140,46,'q','iOS 푸시 큐'],
+    ['q2',310,150,140,46,'q','안드로이드 푸시 큐'],
+    ['q3',310,240,140,46,'q','SMS 큐'],
+    ['q4',310,330,140,46,'q','이메일 큐'],
+    ['w1',500,60,100,46,'fn','작업 서버'],
+    ['w2',500,150,100,46,'fn','작업 서버'],
+    ['w3',500,240,100,46,'fn','작업 서버'],
+    ['w4',500,330,100,46,'fn','작업 서버'],
+    ['tp',650,44,170,356,'grp','제3자 서비스','b'],
+    ['apns',670,60,130,46,'ext','APNs'],
+    ['fcm',670,150,130,46,'ext','FCM'],
+    ['sms',670,240,130,46,'ext','SMS 서비스'],
+    ['mail',670,330,130,46,'ext','이메일 서비스'],
+    ['ios',860,60,130,46,'dev','iOS 단말'],
+    ['and',860,150,130,46,'dev','안드로이드 단말'],
+    ['smsd',860,240,130,46,'dev','SMS 단말'],
+    ['maild',860,330,130,46,'dev','이메일 수신 단말']
+  ],e:[
+    ['s1','ns','①'],['s2','ns'],['sn','ns'],
+    ['ns','cache','②'],['cache','db'],
+    ['ns','q1','③'],['ns','q2'],['ns','q3'],['ns','q4'],
+    ['q1','w1','④'],['q2','w2'],['q3','w3'],['q4','w4'],
+    ['w1','apns','⑤'],['w2','fcm'],['w3','sms'],['w4','mail'],
+    ['apns','ios','⑥'],['fcm','and'],['sms','smsd'],['mail','maild'],
+    ['w1','q1','오류 시 재시도',{f:[550,60],v:[[550,28],[380,28]],t:[380,60]}]
+  ]})</script>
+  <ul>
+    <li>알림 서버: 네 가지 일을 맡는다. 알림 전송 API 운영과 알림 검증, 캐시나 데이터베이스 질의, 큐 적재다. 알림 전송 API는 스팸 방지를 위해 보통 사내 서비스나 인증된 클라이언트만 이용할 수 있다. 알림 검증은 이메일 주소와 전화번호를 기본적으로 검사하는 단계다. 큐 적재는 알림 데이터를 메시지 큐에 넣는 일이다. 큐를 종류별로 두므로 알림을 병렬로 처리한다.</li>
+    <li>캐시: 사용자 정보, 단말 정보, 알림 템플릿을 캐시한다.</li>
+    <li>데이터베이스: 사용자와 알림, 설정 정보를 저장한다.</li>
+    <li>메시지 큐: 구성 요소 간 의존성을 제거하고, 다량의 알림이 전송되어야 하는 경우 버퍼 역할도 한다. 알림 종류별로 큐를 따로 두어 제3자 서비스 하나에 장애가 생겨도 다른 종류의 알림은 정상 동작한다.</li>
+    <li>작업 서버: 메시지 큐에서 전송할 알림을 꺼내 제3자 서비스로 전달한다.</li>
+  </ul>
+  <p>이메일 형태의 알림을 보내는 API 예시는 다음과 같다.</p>
+<pre>POST https://api.example.com/v/sms/send
+
+{
+  "to": [
+    { "user_id": 123456 }
+  ],
+  "from": { "email": "from_address@example.com" },
+  "subject": "Hello, World!",
+  "content": [
+    { "type": "text/plain", "value": "Hello, World!" }
+  ]
+}</pre>
+  <div class="tbl"><table>
+    <tr><th>단계</th><th>동작</th></tr>
+    <tr><td>1</td><td>API를 호출해 알림 서버로 알림을 보낸다.</td></tr>
+    <tr><td>2</td><td>알림 서버가 사용자 정보, 단말 토큰, 알림 설정 같은 메타데이터를 캐시나 데이터베이스에서 가져온다.</td></tr>
+    <tr><td>3</td><td>알림 서버가 전송할 알림에 맞는 이벤트를 만들어 해당 큐에 넣는다. iOS 푸시 알림 이벤트는 iOS 푸시 알림 큐에 넣는다.</td></tr>
+    <tr><td>4</td><td>작업 서버가 메시지 큐에서 알림 이벤트를 꺼낸다.</td></tr>
+    <tr><td>5</td><td>작업 서버가 알림을 제3자 서비스로 보낸다.</td></tr>
+    <tr><td>6</td><td>제3자 서비스가 사용자 단말로 알림을 전송한다.</td></tr>
+  </table></div>
+</section>
+
+<section id="s5">
+  <h2><span class="no">05</span>안정성</h2>
+
+  <h3>데이터 손실 방지</h3>
+  <p>알림 전송 시스템의 가장 중요한 요구사항은 어떤 상황에서도 알림이 소실되지 않는 것이다. 알림이 지연되거나 순서가 틀려도 괜찮지만 사라지면 곤란하다. 이 요구사항을 만족하려면 알림 데이터를 데이터베이스에 보관하고 재시도 메커니즘을 구현해야 한다. 알림 로그 데이터베이스를 유지하는 것이 한 가지 방법이다.</p>
+  <figure>
+    <div class="diag" data-diag="f1011"></div>
+    <figcaption>그림 10-11 알림 로그 데이터베이스</figcaption>
+  </figure>
+  <script>dg('f1011',{w:700,h:230,n:[
+    ['q',20,40,180,56,'q','iOS 푸시 알림 큐'],
+    ['w',260,40,140,56,'fn','작업 서버'],
+    ['apns',460,40,120,56,'ext','APNS'],
+    ['log',250,150,160,56,'db','알림 로그 데이터베이스']
+  ],e:[['q','w'],['w','apns'],['w','log']]})</script>
+
+  <h3>알림 중복 전송 방지</h3>
+  <p>같은 알림이 여러 번 반복되는 것을 완전히 막기는 어렵다. 대부분의 경우 알림은 딱 한 번만 전송되지만, 분산 시스템의 특성상 가끔은 같은 알림이 중복되어 전송되기도 한다. 빈도를 줄이려면 중복을 탐지하는 메커니즘을 도입하고 오류를 신중하게 처리해야 한다.</p>
+  <p>간단한 중복 방지 로직은 다음과 같다. 보내야 할 알림이 도착하면 그 이벤트 ID를 검사해 이전에 본 적이 있는 이벤트인지 살핀다. 중복된 이벤트라면 버리고, 그렇지 않으면 알림을 발송한다.</p>
+</section>
+
+<section id="s6">
+  <h2><span class="no">06</span>추가 구성 요소</h2>
+
+  <h3>알림 템플릿</h3>
+  <p>대형 알림 시스템은 하루에도 수백만 건 이상의 알림을 처리하는데 그 메시지 대부분은 형식이 비슷하다. 알림 템플릿은 인자나 스타일, 추적 링크만 조정하면 사전에 지정한 형식에 맞춰 알림을 만들어 내는 틀이다. 템플릿을 쓰면 전송되는 알림들의 형식을 일관성 있게 유지하고 오류 가능성과 작성 시간을 함께 줄인다.</p>
+  <div class="callout"><b>본문</b><br>여러분이 꿈꿔온 그 상품을 우리가 준비했습니다. [item_name]이 다시 입고되었습니다! [date]까지만 주문 가능합니다!<br><br><b>타이틀(CTA: Call to Action)</b><br>지금 [item_name]을 주문 또는 예약하세요!</div>
+
+  <h3>알림 설정</h3>
+  <p>사용자는 이미 너무 많은 알림을 받고 있어서 쉽게 피곤함을 느낀다. 따라서 많은 웹사이트와 앱에서는 사용자가 알림 설정을 상세히 조정할 수 있도록 한다. 이 정보는 알림 설정 테이블에 보관하며 다음과 같은 필드를 둔다.</p>
+  <div class="tbl"><table>
+    <tr><th>필드</th><th>타입</th><th>설명</th></tr>
+    <tr><td>user_id</td><td>bigInt</td><td>사용자 식별자</td></tr>
+    <tr><td>channel</td><td>varchar</td><td>알림이 전송될 채널. 푸시 알림, 이메일, SMS 등</td></tr>
+    <tr><td>opt_in</td><td>boolean</td><td>해당 채널로 알림을 받을 것인지의 여부</td></tr>
+  </table></div>
+  <p>이 설정을 도입한 뒤에는 특정 종류의 알림을 보내기 전에 반드시 해당 사용자가 해당 알림을 켜 두었는지 확인해야 한다.</p>
+
+  <h3>전송률 제한</h3>
+  <p>사용자에게 너무 많은 알림을 보내지 않도록 하는 한 가지 방법은 한 사용자가 받을 수 있는 알림의 빈도를 제한하는 것이다. 알림을 너무 많이 보내면 사용자가 알림 기능을 아예 꺼 버릴 수도 있다.</p>
+
+  <h3>재시도 방법</h3>
+  <p>제3자 서비스가 알림 전송에 실패하면 해당 알림을 재시도 전용 큐에 넣는다. 같은 문제가 계속해서 발생하면 개발자에게 통지한다.</p>
+
+  <h3>푸시 알림과 보안</h3>
+  <p>iOS와 안드로이드 앱의 경우 알림 전송 API는 appKey와 appSecret을 사용해 보안을 유지한다. 따라서 인증된 클라이언트나 승인된 클라이언트만 해당 API로 알림을 보낼 수 있다.</p>
+
+  <h3>큐 모니터링</h3>
+  <p>알림 시스템을 모니터링할 때 중요한 지표는 큐에 쌓인 알림의 개수다. 이 수가 너무 크면 작업 서버들이 이벤트를 빠르게 처리하지 못한다는 뜻이다. 그런 경우에는 작업 서버를 증설하는 것이 바람직하다.</p>
+
+  <h3>이벤트 추적</h3>
+  <p>알림 확인율, 클릭율, 실제 앱 사용으로 이어지는 비율 같은 지표는 사용자를 이해하는 데 중요하다. 데이터 분석 서비스는 보통 이벤트 추적 기능도 갖추고 있어서 알림 시스템을 만들면 데이터 분석 서비스와도 통합해야 한다.</p>
+  <figure>
+    <div class="diag" data-diag="track"></div>
+    <figcaption>그림 10-13 알림 시스템 이벤트</figcaption>
+  </figure>
+  <script>dg('track',{w:820,h:230,n:[
+    ['st',10,80,90,44,'st','시작'],
+    ['wait',150,80,110,44,'st','발송 대기'],
+    ['sent',310,80,110,44,'st','알림 발송'],
+    ['recv',470,80,110,44,'st','사용자 수신'],
+    ['click',660,20,140,44,'st','클릭'],
+    ['opt',660,140,140,44,'st','수신 거부 설정'],
+    ['err',270,170,100,44,'err','오류']
+  ],e:[
+    ['st','wait'],['wait','sent'],['sent','recv'],['recv','click'],['recv','opt'],['wait','err'],['sent','err']
+  ]})</script>
+</section>
+
+<section id="s7">
+  <h2><span class="no">07</span>수정된 설계안</h2>
+  <figure>
+    <div class="diag" data-diag="final"></div>
+    <figcaption>그림 10-14 수정된 설계안</figcaption>
+  </figure>
+  <script>dg('final',{w:980,h:410,n:[
+    ['svc',10,175,100,50,'src','서비스 N'],
+    ['ns',150,160,160,80,'app','알림 서버','인증, 전송률 제한'],
+    ['cache',165,280,130,46,'db','캐시'],
+    ['db',150,350,160,50,'db','데이터베이스','단말, 설정, 사용자 정보'],
+    ['q',360,175,140,50,'q','iOS 푸시 큐'],
+    ['w',550,175,110,50,'fn','작업 서버'],
+    ['apns',710,175,90,50,'ext','APNs'],
+    ['ios',850,175,100,50,'dev','iOS 단말'],
+    ['an',440,20,170,50,'app','데이터 분석 서비스'],
+    ['tpl',490,300,120,46,'db','알림 템플릿'],
+    ['log',640,300,120,46,'db','알림 로그']
+  ],e:[
+    ['svc','ns'],['ns','cache'],['cache','db'],['ns','q'],['q','w'],['w','apns'],['apns','ios'],
+    ['w','q','오류 시 재시도',{f:[575,175],v:[[575,130],[430,130]],t:[430,175]}],
+    ['ns','an','알림 전송 대기',{f:[230,160],v:[[230,45]],t:[440,45]}],
+    ['w','an','알림 발송',{f:[640,175],v:[[640,62]],t:[610,62]}],
+    ['ios','an','클릭 이벤트 추적',{f:[900,175],v:[[900,32]],t:[610,32]}],
+    ['w','tpl'],['w','log']
+  ]})</script>
+  <div class="tbl wrap1"><table>
+    <tr><th>추가된 것</th><th>내용</th></tr>
+    <tr><td>인증, 전송률 제한</td><td>알림 서버에 인증(authentication)과 전송률 제한(rate-limiting) 기능을 더했다.</td></tr>
+    <tr><td>재시도</td><td>전송 실패에 대응하는 기능이다. 전송에 실패한 알림은 다시 큐에 넣고 지정된 횟수만큼 재시도한다.</td></tr>
+    <tr><td>전송 템플릿</td><td>알림 생성 과정을 단순화하고 알림 내용의 일관성을 유지한다.</td></tr>
+    <tr><td>모니터링과 추적</td><td>시스템 상태를 확인하고 추후 시스템을 개선하기 쉽도록 한다.</td></tr>
+  </table></div>
+</section>
+
+<section id="s8">
+  <h2><span class="no">08</span>마무리</h2>
+  <p>이번 장에서는 규모 확장이 쉬울 뿐 아니라 푸시 알림, SMS 메시지, 이메일 등 여러 정보 전달 방식을 지원하는 알림 시스템을 만들었다. 시스템 구성 요소 사이의 결합도를 낮추기 위해 메시지 큐를 적극적으로 사용하였다. 집중한 주제는 다음과 같다.</p>
+  <div class="tbl wrap1"><table>
+    <tr><th>주제</th><th>내용</th></tr>
+    <tr><td>안정성</td><td>메시지 전송 실패율을 낮추기 위해 안정적인 재시도 메커니즘을 도입하였다.</td></tr>
+    <tr><td>보안</td><td>인증된 클라이언트만 알림을 보낼 수 있도록 appKey와 appSecret 등의 메커니즘을 이용하였다.</td></tr>
+    <tr><td>이벤트 추적과 모니터링</td><td>알림이 만들어진 후 성공적으로 전송되기까지의 과정을 추적하고 시스템 상태를 모니터링하기 위해 전송 단계마다 이벤트를 추적하고 모니터링하는 시스템을 통합하였다.</td></tr>
+    <tr><td>사용자 설정</td><td>사용자가 알림 수신 설정을 조정할 수 있도록 하였다. 따라서 알림을 보내기 전에 반드시 해당 설정을 확인하도록 시스템 설계를 변경하였다.</td></tr>
+    <tr><td>전송률 제한</td><td>사용자에게 알림을 보내는 빈도를 제한할 수 있도록 하였다.</td></tr>
+  </table></div>
+</section>
+
+<section id="s9">
+  <h2><span class="no">09</span>참고문헌</h2>
+  <div class="tbl wrap1"><table>
+    <tr><th>번호</th><th>자료</th></tr>
+    <tr><td>[1]</td><td>Twilio SMS: https://www.twilio.com/sms</td></tr>
+    <tr><td>[2]</td><td>Nexmo SMS: https://www.nexmo.com/products/sms</td></tr>
+    <tr><td>[3]</td><td>Sendgrid: https://sendgrid.com/</td></tr>
+    <tr><td>[4]</td><td>Mailchimp: https://mailchimp.com/</td></tr>
+    <tr><td>[5]</td><td>You Cannot Have Exactly-Once Delivery: https://bravenewgeek.com/you-cannot-have-exactly-once-delivery/</td></tr>
+    <tr><td>[6]</td><td>Security in Push Notifications: https://cloud.ibm.com/docs/services/mobilepush</td></tr>
+    <tr><td>[7]</td><td>Key metrics for RabbitMQ monitoring: www.datadoghq.com/blog/rabbitmq-monitoring</td></tr>
+  </table></div>
+</section>
+
+</div>
+<script>
+(()=>{
+const NS='http://www.w3.org/2000/svg';
+const mk=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e};
+const clip=(n,tx,ty)=>{const cx=n.x+n.w/2,cy=n.y+n.h/2,dx=tx-cx,dy=ty-cy;if(!dx&&!dy)return[cx,cy];const t=Math.min(dx?n.w/2/Math.abs(dx):1e9,dy?n.h/2/Math.abs(dy):1e9);return[cx+dx*t,cy+dy*t]};
+const lines=(g,x,y,str,cls,lh)=>{const ps=String(str).split('\n');const t=mk('text',{x,y:y-(ps.length-1)*lh/2,class:cls,'text-anchor':'middle','dominant-baseline':'central'},g);ps.forEach((p,i)=>{const s=mk('tspan',{x,dy:i?lh:0},t);s.textContent=p});return t};
+function render(){
+  document.querySelectorAll('[data-diag]').forEach(host=>{
+    const id=host.dataset.diag,s=(window.DIAG||{})[id];if(!s)return;
+    host.innerHTML='';
+    const svg=mk('svg',{viewBox:`0 0 ${s.w} ${s.h}`,class:'dg',role:'img'},host);
+    svg.style.minWidth=Math.min(s.w,720)+'px';
+    const m=mk('marker',{id:'ah-'+id,viewBox:'0 0 10 10',refX:9,refY:5,markerWidth:9,markerHeight:9,markerUnits:'userSpaceOnUse',orient:'auto-start-reverse'},mk('defs',{},svg));
+    mk('path',{d:'M0,0L10,5L0,10z',class:'ah'},m);
+    const L={g:mk('g',{},svg),e:mk('g',{},svg),n:mk('g',{},svg),l:mk('g',{},svg)};
+    const N={};
+    s.n.forEach(([k,x,y,w,h,kind,t,sub])=>{
+      N[k]={x,y,w,h};
+      if(kind==='grp'){mk('rect',{x,y,width:w,height:h,rx:10,class:'grp'},L.g);const tt=mk('text',{x:x+12,y:sub==='b'?y+h-10:y+18,class:'grp-t'},L.g);tt.textContent=t;return}
+      if(kind==='note'||kind==='warn'){lines(L.n,x+w/2,y+h/2,t,kind,16);return}
+      const g=mk('g',{class:'nd k-'+kind},L.n);
+      mk('rect',{x,y,width:w,height:h,rx:(kind==='dev'||kind==='st'||kind==='err')?14:6},g);
+      const tl=String(t).split('\n').length,tot=tl*15+(sub?14:0),top=y+h/2-tot/2;
+      lines(g,x+w/2,top+tl*15/2,t,'nt',15);
+      if(sub)lines(g,x+w/2,top+tl*15+7,sub,'ns',13);
+    });
+    (s.e||[]).forEach(([a,b,lab,o])=>{
+      o=o||{};const A=N[a],B=N[b],v=o.v||[];
+      const cb=[B.x+B.w/2,B.y+B.h/2];
+      const p0=o.f||clip(A,...(v[0]||o.t||cb));
+      const p1=o.t||clip(B,...(v.length?v[v.length-1]:p0));
+      const pts=[p0,...v,p1];
+      mk('polyline',{points:pts.map(p=>p.join(',')).join(' '),class:'edge'+(o.d?' dash':''),'marker-end':`url(#ah-${id})`},L.e);
+      if(!lab)return;
+      let lp=o.lp;
+      if(!lp){let bi=0,bl=-1;for(let i=0;i<pts.length-1;i++){const l=Math.hypot(pts[i+1][0]-pts[i][0],pts[i+1][1]-pts[i][1]);if(l>bl){bl=l;bi=i}}lp=[(pts[bi][0]+pts[bi+1][0])/2,(pts[bi][1]+pts[bi+1][1])/2]}
+      const g=mk('g',{class:'el'},L.l),bg=mk('rect',{rx:3},g),tx=lines(g,lp[0],lp[1],lab,'et',14),bb=tx.getBBox();
+      bg.setAttribute('x',bb.x-4);bg.setAttribute('y',bb.y-2);bg.setAttribute('width',bb.width+8);bg.setAttribute('height',bb.height+4);
+    });
+  });
+}
+render();
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(render);
+})();
+</script>
+</body>
+</html>

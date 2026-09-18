@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 380" width="1200" height="380" font-family="'Apple SD Gothic Neo','Pretendard','Malgun Gothic',system-ui,sans-serif">
+<style>
+  .frame{fill:none;stroke:#B7BECC;stroke-dasharray:6 5;stroke-width:1.2}
+  .ptitle{font-size:13px;font-weight:700;fill:#8A92A5;letter-spacing:.04em}
+  .nd rect{stroke-width:1.3}
+  .nt{font-size:14px;font-weight:600;fill:#12161F;text-anchor:middle;dominant-baseline:central}
+  .ns{font-size:11px;fill:#4F586B;text-anchor:middle;dominant-baseline:central}
+  .edge{stroke:#6B7488;stroke-width:1.4;fill:none}
+  .ah{fill:#6B7488}
+  .src-app rect{fill:#E4EBFA;stroke:#6F8AC7}
+  .src-sch rect{fill:#E1F1E7;stroke:#4E9A6F}
+  .q rect{fill:#FBF0DA;stroke:#C49A4A}
+  .fn rect{fill:#FBE7DC;stroke:#CF7B4E}
+  .ext rect{fill:#DFF0F2;stroke:#4B98A6}
+  @media (prefers-color-scheme: dark){
+    .frame{stroke:#3A4254}
+    .ptitle{fill:#6C7486}
+    .nt{fill:#E7EAF1} .ns{fill:#A3AABB}
+    .edge{stroke:#8A93A8} .ah{fill:#8A93A8}
+    .src-app rect{fill:#172440;stroke:#5877BD}
+    .src-sch rect{fill:#122A1C;stroke:#4E9A6F}
+    .q rect{fill:#2E2412;stroke:#B08840}
+    .fn rect{fill:#33200F;stroke:#C27446}
+    .ext rect{fill:#10292E;stroke:#4491A0}
+  }
+</style>
+<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path class="ah" d="M0,0L10,5L0,10z"/></marker></defs>
+<g transform="translate(10,20)"><rect class="frame" x="0" y="0" width="570" height="330" rx="12"/><text class="ptitle" x="14" y="26">이벤트형</text><g class="nd src-app"><rect x="14" y="136" width="116" height="52" rx="6"/><text class="nt" x="72.0" y="155.0">API 서버</text><text class="ns" x="72.0" y="174.0">사용자 행동 직후 발생</text></g><g class="nd q"><rect x="160" y="46" width="136" height="52" rx="6"/><text class="nt" x="228.0" y="73.0">푸시 알림 큐</text></g><g class="nd fn"><rect x="322" y="46" width="92" height="52" rx="6"/><text class="nt" x="368.0" y="73.0">작업 서버</text></g><g class="nd ext"><rect x="444" y="46" width="112" height="52" rx="6"/><text class="nt" x="500.0" y="73.0">FCM</text></g><line class="edge" x1="296" y1="72.0" x2="316" y2="72.0" marker-end="url(#ah)"/><line class="edge" x1="414" y1="72.0" x2="438" y2="72.0" marker-end="url(#ah)"/><line class="edge" x1="130" y1="162.0" x2="154" y2="72.0" marker-end="url(#ah)"/><g class="nd q"><rect x="160" y="136" width="136" height="52" rx="6"/><text class="nt" x="228.0" y="163.0">SMS 큐</text></g><g class="nd fn"><rect x="322" y="136" width="92" height="52" rx="6"/><text class="nt" x="368.0" y="163.0">작업 서버</text></g><g class="nd ext"><rect x="444" y="136" width="112" height="52" rx="6"/><text class="nt" x="500.0" y="163.0">SMS 업체</text></g><line class="edge" x1="296" y1="162.0" x2="316" y2="162.0" marker-end="url(#ah)"/><line class="edge" x1="414" y1="162.0" x2="438" y2="162.0" marker-end="url(#ah)"/><line class="edge" x1="130" y1="162.0" x2="154" y2="162.0" marker-end="url(#ah)"/><g class="nd q"><rect x="160" y="226" width="136" height="52" rx="6"/><text class="nt" x="228.0" y="253.0">이메일 큐</text></g><g class="nd fn"><rect x="322" y="226" width="92" height="52" rx="6"/><text class="nt" x="368.0" y="253.0">작업 서버</text></g><g class="nd ext"><rect x="444" y="226" width="112" height="52" rx="6"/><text class="nt" x="500.0" y="253.0">Amazon SES</text></g><line class="edge" x1="296" y1="252.0" x2="316" y2="252.0" marker-end="url(#ah)"/><line class="edge" x1="414" y1="252.0" x2="438" y2="252.0" marker-end="url(#ah)"/><line class="edge" x1="130" y1="162.0" x2="154" y2="252.0" marker-end="url(#ah)"/></g><g transform="translate(620,20)"><rect class="frame" x="0" y="0" width="570" height="330" rx="12"/><text class="ptitle" x="14" y="26">스케줄형</text><g class="nd src-sch"><rect x="14" y="136" width="116" height="52" rx="6"/><text class="nt" x="72.0" y="155.0">스케줄링 서버</text><text class="ns" x="72.0" y="174.0">정해진 시각에 발생</text></g><g class="nd q"><rect x="160" y="46" width="136" height="52" rx="6"/><text class="nt" x="228.0" y="73.0">푸시 알림 큐</text></g><g class="nd fn"><rect x="322" y="46" width="92" height="52" rx="6"/><text class="nt" x="368.0" y="73.0">작업 서버</text></g><g class="nd ext"><rect x="444" y="46" width="112" height="52" rx="6"/><text class="nt" x="500.0" y="73.0">FCM</text></g><line class="edge" x1="296" y1="72.0" x2="316" y2="72.0" marker-end="url(#ah)"/><line class="edge" x1="414" y1="72.0" x2="438" y2="72.0" marker-end="url(#ah)"/><line class="edge" x1="130" y1="162.0" x2="154" y2="72.0" marker-end="url(#ah)"/><g class="nd q"><rect x="160" y="136" width="136" height="52" rx="6"/><text class="nt" x="228.0" y="163.0">SMS 큐</text></g><g class="nd fn"><rect x="322" y="136" width="92" height="52" rx="6"/><text class="nt" x="368.0" y="163.0">작업 서버</text></g><g class="nd ext"><rect x="444" y="136" width="112" height="52" rx="6"/><text class="nt" x="500.0" y="163.0">SMS 업체</text></g><line class="edge" x1="296" y1="162.0" x2="316" y2="162.0" marker-end="url(#ah)"/><line class="edge" x1="414" y1="162.0" x2="438" y2="162.0" marker-end="url(#ah)"/><line class="edge" x1="130" y1="162.0" x2="154" y2="162.0" marker-end="url(#ah)"/><g class="nd q"><rect x="160" y="226" width="136" height="52" rx="6"/><text class="nt" x="228.0" y="253.0">이메일 큐</text></g><g class="nd fn"><rect x="322" y="226" width="92" height="52" rx="6"/><text class="nt" x="368.0" y="253.0">작업 서버</text></g><g class="nd ext"><rect x="444" y="226" width="112" height="52" rx="6"/><text class="nt" x="500.0" y="253.0">Amazon SES</text></g><line class="edge" x1="296" y1="252.0" x2="316" y2="252.0" marker-end="url(#ah)"/><line class="edge" x1="414" y1="252.0" x2="438" y2="252.0" marker-end="url(#ah)"/><line class="edge" x1="130" y1="162.0" x2="154" y2="252.0" marker-end="url(#ah)"/></g>
+</svg>
