@@ -1,0 +1,850 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>구글 드라이브 설계 (책 정리)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#F3F4F7; --panel:#FFFFFF; --panel-2:#F7F8FB;
+  --ink:#12161F; --ink-2:#4F586B; --ink-3:#8A92A5;
+  --line:#DCE0E8; --line-soft:#E9ECF2; --line-strong:#B7BECC;
+  --accent:#2F5FD0; --bad:#C0504F; --edge:#6B7488;
+  --tag-add-bg:#DDF0E4; --tag-add:#2B7A4E;
+  --k-src:#EEF0F4; --k-src-s:#A9B1C0;
+  --k-app:#E4EBFA; --k-app-s:#6F8AC7;
+  --k-q:#FBF0DA;   --k-q-s:#C49A4A;
+  --k-fn:#FBE7DC;  --k-fn-s:#CF7B4E;
+  --k-ext:#DFF0F2; --k-ext-s:#4B98A6;
+  --k-dev:#FFFFFF; --k-dev-s:#8E96A8;
+  --k-db:#ECE6F6;  --k-db-s:#8A71B6;
+  --k-sch:#E1F1E7; --k-sch-s:#4E9A6F;
+  --k-st:#F7F8FB;  --k-st-s:#9AA2B3;
+  --k-err:#F9E3E2; --k-err-s:#C0504F;
+  --f-ui:'IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0B0E14; --panel:#12161E; --panel-2:#171C26;
+    --ink:#E7EAF1; --ink-2:#A3AABB; --ink-3:#6C7486;
+    --line:#242A38; --line-soft:#1B212C; --line-strong:#3A4254;
+    --accent:#7C9CF0; --bad:#E27A78; --edge:#8A93A8;
+    --tag-add-bg:#12301F; --tag-add:#7CCB9C;
+    --k-src:#1A1F2A; --k-src-s:#4A5366;
+    --k-app:#172440; --k-app-s:#5877BD;
+    --k-q:#2E2412;   --k-q-s:#B08840;
+    --k-fn:#33200F;  --k-fn-s:#C27446;
+    --k-ext:#10292E; --k-ext-s:#4491A0;
+    --k-dev:#12161E; --k-dev-s:#6C7486;
+    --k-db:#231C33;  --k-db-s:#8A71B6;
+    --k-sch:#122A1C; --k-sch-s:#4E9A6F;
+    --k-st:#171C26;  --k-st-s:#4A5366;
+    --k-err:#321717; --k-err-s:#D96A68;
+  }
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+/* 글자 크기는 h1(28px), h2(20px), 본문(14px) 세 가지. 글자색은 --ink 하나 */
+body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--f-ui); font-size:14px; line-height:1.8; -webkit-font-smoothing:antialiased; word-break:keep-all}
+.wrap{max-width:1220px; margin:0 auto; padding:40px 20px 96px}
+a{color:inherit; text-decoration:underline; text-decoration-color:var(--line-strong); text-underline-offset:3px}
+a:hover{text-decoration-color:var(--ink)}
+
+/* header */
+.hero{padding-bottom:24px; border-bottom:1px solid var(--line)}
+.eyebrow{font-weight:600}
+.hero h1{font-size:28px; line-height:1.3; margin:6px 0 12px}
+.lede{max-width:800px; margin:0 0 14px}
+.legend{display:flex; flex-wrap:wrap; gap:6px 18px; align-items:center; margin-top:6px}
+.legend .sw{display:inline-block; width:14px; height:14px; border-radius:3px; border:1.3px solid; vertical-align:-2px; margin-right:6px}
+.legend .ln{display:inline-block; width:22px; height:0; border-top:2.5px solid; vertical-align:4px; margin-right:6px}
+
+/* tags */
+.tag{display:inline-block; font-weight:600; line-height:1.4; padding:0 6px; border-radius:4px; vertical-align:baseline}
+.tag.add{background:var(--tag-add-bg)}
+
+/* toc */
+.toc{margin:28px 0 8px; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:16px 22px}
+.toc h2{font-size:14px; margin:0 0 6px; border:0; padding:0}
+.toc ol{margin:0; padding-left:0; list-style:none; columns:2; column-gap:40px; max-width:none}
+.toc li{break-inside:avoid; padding:2px 0}
+.toc .n{display:inline-block; width:28px; font-family:var(--f-mono)}
+
+/* sections */
+section{padding-top:52px}
+h2{font-size:20px; line-height:1.4; margin:0 0 2px; padding-top:16px; border-top:2px solid var(--ink); display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+h2 .no{font-family:var(--f-mono); font-weight:500}
+.pg{margin:0 0 12px}
+h3{font-size:14px; line-height:1.6; margin:30px 0 6px; display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+p, ul, ol{max-width:800px}
+p{margin:8px 0 12px}
+ul, ol{padding-left:22px; margin:8px 0 14px}
+li{margin:3px 0}
+code{font-family:var(--f-mono); font-size:1em; background:var(--panel-2); border:1px solid var(--line-soft); border-radius:4px; padding:0 4px}
+pre{font-family:var(--f-mono); font-size:14px; line-height:1.6; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:14px 18px; overflow-x:auto; max-width:800px}
+
+/* callout and supplement */
+.callout{max-width:800px; background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:6px; padding:12px 16px; margin:16px 0}
+.callout.add{border-left-color:var(--tag-add)}
+.callout .tag{margin-right:6px}
+.extra{background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--tag-add); border-radius:8px; padding:2px 24px 12px; margin:28px 0}
+.extra > h3:first-child{margin-top:20px}
+.extra .tbl, .extra figure{background:var(--panel-2)}
+.extra .tbl th{background:var(--panel)}
+
+/* tables */
+.tbl{overflow-x:auto; margin:12px 0 18px; border:1px solid var(--line); border-radius:8px; background:var(--panel); max-width:900px}
+table{border-collapse:collapse; width:100%; font-size:14px; line-height:1.7}
+th, td{text-align:left; vertical-align:top; padding:9px 14px; border-bottom:1px solid var(--line-soft)}
+th{background:var(--panel-2); font-weight:600; white-space:nowrap}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:600; white-space:nowrap}
+.tbl.wrap1 td:first-child{white-space:normal; min-width:120px}
+
+/* figures: 그림 안 글자는 13px로 그리고 14/13배로 키워 본문과 같은 14px로 보이게 한다 */
+figure{margin:18px 0 22px; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:16px 16px 10px}
+.diag{overflow-x:auto; -webkit-overflow-scrolling:touch}
+figcaption{text-align:center; margin-top:6px}
+svg.dg{display:block; margin:0 auto; height:auto; font-family:var(--f-ui)}
+.dg text{font-size:13px; fill:var(--ink)}
+.dg .nt, .dg .warn, .dg .lab, .dg .grp-t{font-weight:600}
+.dg .bt{font-family:var(--f-mono)}
+.dg .grp{fill:none; stroke:var(--line-strong); stroke-dasharray:5 4; stroke-width:1.2}
+.dg .nd rect{stroke-width:1.3}
+.dg .edge{fill:none; stroke:var(--edge); stroke-width:1.4}
+.dg .dash{stroke-dasharray:5 4}
+.dg .ah{fill:var(--edge)}
+.dg .edge.c-meta{stroke:var(--k-db-s); stroke-width:2}
+.dg .edge.c-blk{stroke:var(--k-fn-s); stroke-width:2}
+.dg .edge.c-noti{stroke:var(--k-sch-s); stroke-width:2}
+.dg .ah.c-meta{fill:var(--k-db-s)}
+.dg .ah.c-blk{fill:var(--k-fn-s)}
+.dg .ah.c-noti{fill:var(--k-sch-s)}
+.dg .el rect{fill:var(--panel)}
+.extra .dg .el rect{fill:var(--panel-2)}
+.dg .life{stroke:var(--line-strong); stroke-dasharray:4 4; stroke-width:1}
+.k-src rect{fill:var(--k-src); stroke:var(--k-src-s)}
+.k-app rect{fill:var(--k-app); stroke:var(--k-app-s)}
+.k-q rect{fill:var(--k-q); stroke:var(--k-q-s)}
+.k-fn rect{fill:var(--k-fn); stroke:var(--k-fn-s)}
+.k-ext rect{fill:var(--k-ext); stroke:var(--k-ext-s)}
+.k-dev rect{fill:var(--k-dev); stroke:var(--k-dev-s)}
+.k-db rect{fill:var(--k-db); stroke:var(--k-db-s)}
+.k-sch rect{fill:var(--k-sch); stroke:var(--k-sch-s)}
+.k-st rect{fill:var(--k-st); stroke:var(--k-st-s)}
+.k-err rect{fill:var(--k-err); stroke:var(--k-err-s)}
+.bk rect{stroke-width:1.3}
+.bk-s rect{fill:var(--k-st); stroke:var(--k-st-s)}
+.bk-c rect{fill:var(--k-q); stroke:var(--k-q-s); stroke-width:2.5}
+.bk-o rect{fill:var(--k-ext); stroke:var(--k-ext-s)}
+.bk-m rect{fill:var(--k-db); stroke:var(--k-db-s)}
+.bk-g rect{fill:none; stroke:var(--line-strong); stroke-dasharray:4 3}
+
+@media (max-width:720px){
+  .wrap{padding:28px 16px 72px}
+  .toc ol{columns:1}
+  .extra{padding:2px 16px 10px}
+}
+</style>
+<script>function dg(id,s){(window.DIAG||(window.DIAG={}))[id]=s}function sq(id,s){s.t='sq';dg(id,s)}function bk(id,s){s.t='bk';dg(id,s)}</script>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <span class="eyebrow">대규모 시스템 설계 기초 15장 (책 277~300쪽)</span>
+  <h1>구글 드라이브 설계</h1>
+  <p class="lede">책은 개략적 설계안에서 구성 요소를 한꺼번에 꺼내 놓고 나중에 하나씩 설명해서 흐름을 따라가기 어렵다. 이 문서는 순서를 바꿔, 파일 하나가 올라가고 바뀌고 다른 단말로 퍼지는 과정을 따라간다. 절마다 문제를 먼저 보이고, 그 문제를 푸는 구성 요소를 하나씩 붙인다. 책에 없는 설명에는 <span class="tag add">보충</span>을 달았다.</p>
+  <div class="legend">
+    <span><i class="sw" style="background:var(--k-dev);border-color:var(--k-dev-s)"></i>단말</span>
+    <span><i class="sw" style="background:var(--k-app);border-color:var(--k-app-s)"></i>로드밸런서, API 서버</span>
+    <span><i class="sw" style="background:var(--k-fn);border-color:var(--k-fn-s)"></i>블록 저장소 서버</span>
+    <span><i class="sw" style="background:var(--k-ext);border-color:var(--k-ext-s)"></i>S3, 콜드 스토리지</span>
+    <span><i class="sw" style="background:var(--k-db);border-color:var(--k-db-s)"></i>메타데이터 DB, 캐시</span>
+    <span><i class="sw" style="background:var(--k-sch);border-color:var(--k-sch-s)"></i>알림 서비스</span>
+    <span><i class="sw" style="background:var(--k-q);border-color:var(--k-q-s)"></i>바뀐 블록</span>
+  </div>
+  <div class="legend">
+    <span><i class="ln" style="border-color:var(--k-db-s)"></i>메타데이터 경로</span>
+    <span><i class="ln" style="border-color:var(--k-fn-s)"></i>블록(파일 내용) 경로</span>
+    <span><i class="ln" style="border-color:var(--k-sch-s)"></i>알림 경로</span>
+  </div>
+</header>
+
+<nav class="toc">
+  <h2>목차</h2>
+  <ol>
+    <li><span class="n">00</span><a href="#s0">전체 지도</a></li>
+    <li><span class="n">01</span><a href="#s1">무엇을 만드나</a></li>
+    <li><span class="n">02</span><a href="#s2">서버 한 대에서 출발</a></li>
+    <li><span class="n">03</span><a href="#s3">파일 정보와 내용을 나눈다</a></li>
+    <li><span class="n">04</span><a href="#s4">파일을 블록으로 쪼갠다</a></li>
+    <li><span class="n">05</span><a href="#s5">수정하면 바뀐 블록만 보낸다</a></li>
+    <li><span class="n">06</span><a href="#s6">업로드 전체 흐름</a></li>
+    <li><span class="n">07</span><a href="#s7">다른 단말이 알아채기</a></li>
+    <li><span class="n">08</span><a href="#s8">내려받아 다시 조립하기</a></li>
+    <li><span class="n">09</span><a href="#s9">동시에 고치면</a></li>
+    <li><span class="n">10</span><a href="#s10">데이터 모델</a></li>
+    <li><span class="n">11</span><a href="#s11">저장 공간과 장애</a></li>
+    <li><span class="n">12</span><a href="#s12">한 장으로 정리</a></li>
+    <li><span class="n">13</span><a href="#s13">참고 자료</a></li>
+  </ol>
+</nav>
+
+<!-- 00 -->
+<section id="s0">
+  <h2><span class="no">00</span>전체 지도</h2>
+  <p class="pg">책 287쪽 그림 15-10을 경로별로 다시 그림</p>
+  <p>다 만들고 나면 이런 모습이다. 구성 요소는 많지만 오가는 경로는 세 갈래뿐이다.</p>
+  <figure>
+    <div class="diag" data-diag="map"></div>
+    <figcaption>완성된 구조. 선 색이 경로를 나타낸다</figcaption>
+  </figure>
+  <script>dg('map',{w:1000,h:470,n:[
+    ['dev',400,10,200,58,'dev','사용자 단말','웹, 데스크톱 앱, 모바일 앱'],
+    ['blk',40,150,180,56,'fn','블록 저장소 서버'],
+    ['cs',40,275,180,56,'ext','S3','블록 보관'],
+    ['cold',40,400,180,56,'ext','콜드 스토리지','오래 안 쓴 블록'],
+    ['lb',410,150,180,46,'app','로드밸런서'],
+    ['api',410,250,180,56,'app','API 서버'],
+    ['cache',300,390,170,56,'db','메타데이터 캐시'],
+    ['mdb',530,390,170,56,'db','메타데이터 DB','파일 정보, 블록 목록'],
+    ['noti',790,250,180,56,'sch','알림 서비스']
+  ],e:[
+    ['dev','blk','파일 블록 올리기, 받기',{f:[400,39],v:[[130,39]],t:[130,150],c:'blk',b:1}],
+    ['blk','cs','압축, 암호화 후 저장',{c:'blk'}],
+    ['cs','cold','오래되면 이동',{c:'blk'}],
+    ['dev','lb','파일 정보 요청',{c:'meta'}],
+    ['lb','api','',{c:'meta'}],
+    ['api','cache','',{c:'meta'}],
+    ['api','mdb','',{c:'meta'}],
+    ['api','noti','변경 발생',{c:'noti'}],
+    ['noti','dev','롱 폴링: 바뀐 게 있다',{f:[880,250],v:[[880,39]],t:[600,39],c:'noti',d:1}]
+  ]})</script>
+  <div class="tbl wrap1"><table>
+    <tr><th>경로</th><th>오가는 것</th><th>거치는 곳</th></tr>
+    <tr><td>메타데이터 경로</td><td>파일 이름, 버전, 블록 목록 같은 정보. 작고 정확해야 한다.</td><td>로드밸런서 → API 서버 → 캐시, 메타데이터 DB</td></tr>
+    <tr><td>블록 경로</td><td>파일 내용을 4MB씩 자른 블록. 크고 한 번 쓰면 바뀌지 않는다.</td><td>블록 저장소 서버 → S3 → 콜드 스토리지</td></tr>
+    <tr><td>알림 경로</td><td>"바뀐 게 있다"는 신호뿐이다. 무엇이 바뀌었는지는 담지 않는다.</td><td>API 서버 → 알림 서비스 → 단말</td></tr>
+  </table></div>
+</section>
+
+<!-- 01 -->
+<section id="s1">
+  <h2><span class="no">01</span>무엇을 만드나</h2>
+  <p class="pg">책 277~280쪽</p>
+
+  <h3>동기화 폴더</h3>
+  <p>구글 드라이브에서 중요한 기능은 업로드 자체보다 동기화다. 데스크톱 앱을 깔면 컴퓨터에 드라이브 폴더가 생기는데, 이 폴더는 클라우드에 있는 원본을 그대로 따라간다. 노트북에서 파일을 고치면 원본이 바뀌고, 휴대폰과 웹에서도 바뀐 파일이 보인다.</p>
+  <figure>
+    <div class="diag" data-diag="sync"></div>
+    <figcaption>어느 단말에서 고쳐도 원본이 바뀌고, 나머지 단말은 원본을 따라간다</figcaption>
+  </figure>
+  <script>dg('sync',{w:1000,h:310,n:[
+    ['cloud',390,115,220,80,'ext','클라우드의 원본','보고서.docx (v2)'],
+    ['lap',30,20,230,64,'dev','노트북','동기화 폴더의 보고서.docx'],
+    ['phone',30,225,230,64,'dev','휴대폰','앱에서 보는 보고서.docx'],
+    ['web',740,123,230,64,'dev','웹 브라우저','drive.google.com']
+  ],e:[
+    ['lap','cloud','① 노트북에서 수정'],
+    ['cloud','phone','② 바뀐 내용 반영'],
+    ['cloud','web','② 바뀐 내용 반영']
+  ]})</script>
+  <div class="callout add"><span class="tag add">보충</span>그래서 이 장에서 말하는 "다운로드"는 브라우저에서 받는 사본이 아니라, 동기화 폴더를 원본에 맞추는 일이다. 브라우저로 받은 파일은 독립된 사본이라 원본이 바뀌어도 그대로다. 반면 동기화 폴더의 파일은 남이 고치면 따라 바뀌는데, 버그가 아니라 이 기능이 원래 하는 일이다. 파일을 고칠 수 있는 사람은 내가 편집 권한을 준 사람뿐이고, 내가 아직 올리지 않은 수정은 덮어쓰지 않는다(<a href="#s9">9절</a>).</div>
+
+  <h3>요구사항과 규모</h3>
+  <div class="tbl wrap1"><table>
+    <tr><th>항목</th><th>내용</th></tr>
+    <tr><td>기능</td><td>파일 업로드와 다운로드, 여러 단말 동기화, 갱신 이력 조회, 공유, 변경 알림</td></tr>
+    <tr><td>제외</td><td>구글 문서처럼 여럿이 한 문서를 동시에 편집하는 기능</td></tr>
+    <tr><td>단말</td><td>웹과 모바일 앱</td></tr>
+    <tr><td>제약</td><td>파일 최대 10GB, 암호화 필요</td></tr>
+    <tr><td>비기능</td><td>데이터 손실 없음, 빠른 동기화, 대역폭 절약(특히 모바일 데이터), 규모 확장성, 높은 가용성</td></tr>
+  </table></div>
+  <div class="tbl wrap1"><table>
+    <tr><th>숫자</th><th>값</th></tr>
+    <tr><td>사용자</td><td>가입 5천만 명, DAU 천만 명</td></tr>
+    <tr><td>저장 공간</td><td>사용자마다 10GB, 최대 500PB</td></tr>
+    <tr><td>업로드</td><td>사용자마다 하루 2개, 평균 500KB. 약 240 QPS, 최대 480 QPS</td></tr>
+    <tr><td>하루 유입량 <span class="tag add">보충</span></td><td>천만 명 x 2개 x 500KB = 하루 10TB, 1년이면 약 3.65PB</td></tr>
+  </table></div>
+  <p>500PB는 모두가 10GB를 꽉 채웠을 때의 상한이다. 실제로 쌓이는 속도는 하루 10TB 정도다.</p>
+</section>
+
+<!-- 02 -->
+<section id="s2">
+  <h2><span class="no">02</span>서버 한 대에서 출발</h2>
+  <p class="pg">책 280~285쪽</p>
+  <p>처음에는 서버 한 대에 웹 서버(아파치), 데이터베이스(MySQL), 파일을 저장할 1TB 디스크를 모두 둔다. 사용자마다 디렉터리를 하나씩 주고, 올린 파일을 그대로 저장한다. 업로드, 다운로드, 갱신 이력 조회 API 세 개면 기능은 돌아간다.</p>
+  <figure>
+    <div class="diag" data-diag="single"></div>
+    <figcaption>서버 한 대로 만든 첫 버전과 그 문제</figcaption>
+  </figure>
+  <script>dg('single',{w:1000,h:230,n:[
+    ['dev',20,85,150,56,'dev','사용자'],
+    ['box',230,12,420,206,'grp','서버 한 대','b'],
+    ['web',260,40,170,52,'app','웹 서버','아파치'],
+    ['db',450,40,170,52,'db','MySQL','사용자, 파일 정보'],
+    ['disk',260,118,360,62,'st','디스크 1TB','사용자마다 디렉터리 하나, 10MB 남음'],
+    ['w1',680,58,300,26,'warn','① 파일이 늘면 디스크가 가득 찬다'],
+    ['w2',680,136,300,26,'warn','② 서버가 죽으면 파일도 사라진다']
+  ],e:[['dev','web']]})</script>
+  <p>책은 먼저 <code>user_id</code>로 샤딩해 파일을 여러 서버에 나누지만, 서버가 죽으면 파일을 잃는다는 걱정이 남는다. 그래서 파일은 아마존 S3에 맡긴다. S3는 데이터를 여러 지역(region)에 복제할 수 있어서, 한 지역 전체가 멈춰도 파일이 남는다. 이어서 남은 서버도 역할별로 나눈다.</p>
+  <figure>
+    <div class="diag" data-diag="split"></div>
+    <figcaption>그림 15-7 역할별로 나눈 구조</figcaption>
+  </figure>
+  <script>dg('split',{w:900,h:350,n:[
+    ['dev',360,8,180,50,'dev','사용자 단말'],
+    ['lb',370,92,160,44,'app','로드밸런서'],
+    ['api',350,170,200,56,'app','API 서버','여러 대, 상태 없음'],
+    ['mdb',130,278,240,60,'db','메타데이터 DB','복제, 샤딩'],
+    ['s3',530,278,240,60,'ext','S3','여러 지역에 복제']
+  ],e:[['dev','lb'],['lb','api'],['api','mdb','파일 정보'],['api','s3','파일 내용']]})</script>
+  <div class="tbl wrap1"><table>
+    <tr><th>구성 요소</th><th>하는 일</th></tr>
+    <tr><td>로드밸런서</td><td>요청을 여러 API 서버에 나누고, 죽은 서버는 피해 간다.</td></tr>
+    <tr><td>API 서버</td><td>인증, 메타데이터 갱신 등 파일 업로드를 뺀 거의 모든 일을 맡는다. 상태가 없어 필요한 만큼 늘릴 수 있다.</td></tr>
+    <tr><td>메타데이터 DB</td><td>사용자, 파일, 버전 정보를 둔다. 파일 저장 서버에서 떼어 내 복제하고 샤딩한다.</td></tr>
+    <tr><td>S3</td><td>파일 내용을 둔다. 두 개 이상의 지역에 복제한다.</td></tr>
+  </table></div>
+</section>
+
+<!-- 03 -->
+<section id="s3">
+  <h2><span class="no">03</span>파일 정보와 내용을 나눈다</h2>
+  <p class="pg">책 287~291쪽 내용을 묶음 <span class="tag add">보충</span></p>
+  <p>2절에서 DB와 S3를 나눈 것이 이 설계의 뼈대다. 파일 하나는 두 군데에 나뉘어 저장된다. 이름과 버전 같은 정보는 메타데이터 DB에, 실제 내용은 블록으로 잘라 S3에 둔다.</p>
+  <figure>
+    <div class="diag" data-diag="meta"></div>
+    <figcaption>보고서.docx 하나가 DB 한 줄과 S3 블록 네 개로 저장된다</figcaption>
+  </figure>
+  <script>dg('meta',{w:960,h:310,n:[
+    ['file',20,120,170,70,'src','보고서.docx','14MB'],
+    ['row',330,16,600,92,'db','메타데이터 DB의 한 줄','id 42, 이름 보고서.docx, 경로 /work, 최신 버전 v1\n블록 목록 [a1f3, 7c0e, 3b9d, e52a]'],
+    ['s3',330,160,600,138,'grp','S3: 파일 내용','b'],
+    ['b1',350,180,130,54,'ext','a1f3','4MB'],
+    ['b2',495,180,130,54,'ext','7c0e','4MB'],
+    ['b3',640,180,130,54,'ext','3b9d','4MB'],
+    ['b4',785,180,130,54,'ext','e52a','2MB']
+  ],e:[
+    ['file','row','정보'],
+    ['file','s3','내용'],
+    ['row','s3','블록 목록이 블록을 가리킴',{f:[630,108],t:[630,160],d:1}]
+  ]})</script>
+  <div class="tbl wrap1"><table>
+    <tr><th>구분</th><th>메타데이터 DB</th><th>S3</th></tr>
+    <tr><td>담는 것</td><td>이름, 경로, 최신 버전, 블록 목록</td><td>파일 내용(블록)</td></tr>
+    <tr><td>크기</td><td>파일마다 수백 바이트</td><td>파일 크기만큼</td></tr>
+    <tr><td>바뀌는 방식</td><td>파일을 고칠 때마다 갱신</td><td>한 번 쓰면 바뀌지 않음</td></tr>
+    <tr><td>일관성</td><td>강한 일관성 필요. 모든 단말이 같은 최신 버전을 봐야 한다.</td><td>바뀌지 않으므로 일관성 문제가 없다.</td></tr>
+  </table></div>
+  <p>이렇게 나누면 "파일이 바뀌었다"는 사건이 메타데이터 한 줄을 고치는 일로 줄어든다. 책이 메타데이터 DB로 ACID를 지원하는 관계형 DB를 고른 것도 이 한 줄을 정확하게 지켜야 하기 때문이다. 캐시를 둘 때는 DB를 먼저 갱신하고 캐시 항목을 지워서, 캐시가 옛 버전을 들고 있지 않게 한다.</p>
+</section>
+
+<!-- 04 -->
+<section id="s4">
+  <h2><span class="no">04</span>파일을 블록으로 쪼갠다</h2>
+  <p class="pg">책 287~289쪽</p>
+  <p>10GB 파일을 한 번에 올리다 끊기면 처음부터 다시 올려야 하고, 한 글자만 고쳐도 10GB를 다시 보내야 한다. 그래서 파일을 4MB 블록으로 자른다. 드롭박스와 같은 크기다.</p>
+  <figure>
+    <div class="diag" data-diag="blist"></div>
+    <figcaption>파일 → 블록 → 해시 → 블록 목록 (해시는 앞 네 글자만 표시)</figcaption>
+  </figure>
+  <script>bk('blist',{w:980,h:236,x:180,cw:150,rows:[
+    {y:16,label:'① 4MB씩 자른다',cells:[['블록 1 (4MB)'],['블록 2 (4MB)'],['블록 3 (4MB)'],['블록 4 (2MB)']]},
+    {y:100,label:'② 블록마다 해시',cells:[['a1f3…','o'],['7c0e…','o'],['3b9d…','o'],['e52a…','o']],note:'해시가 S3의 객체 이름'},
+    {y:184,label:'③ 순서대로 이은 목록',cells:[['v1 = [a1f3, 7c0e, 3b9d, e52a]','m',null,624]],note:'메타데이터 DB에 저장'}
+  ],ar:[[255,58,255,98],[413,58,413,98],[571,58,571,98],[729,58,729,98],[255,142,255,182],[413,142,413,182],[571,142,571,182],[729,142,729,182]]})</script>
+  <ul>
+    <li>블록마다 SHA-256 해시를 계산한다. 내용이 같으면 해시가 같고, 1비트만 달라도 해시가 완전히 달라진다.</li>
+    <li>블록은 해시를 이름으로 삼아 S3에 저장한다. 내용이 곧 주소다.</li>
+    <li>파일의 한 버전은 해시를 순서대로 늘어놓은 블록 목록이 된다. 메타데이터 DB에는 이 목록만 저장한다.</li>
+    <li>블록 단위로 올리면 이어 올리기가 저절로 된다. 끊겼다가 다시 연결되면 아직 안 올라간 블록만 올리면 된다.</li>
+  </ul>
+  <div class="callout add"><span class="tag add">보충</span>책의 "블록 저장소 서버"는 AWS EBS 같은 블록 스토리지가 아니다. 파일을 블록 단위로 처리하는 업로드/다운로드 서버이고, 실제 저장은 S3가 한다.</div>
+</section>
+
+<!-- 05 -->
+<section id="s5">
+  <h2><span class="no">05</span>수정하면 바뀐 블록만 보낸다</h2>
+  <p class="pg">책 289~290쪽 (델타 동기화)</p>
+  <p>책은 "수정된 블록만 동기화한다"고만 설명하고, 어느 블록이 바뀌었는지 알아내는 방법은 말하지 않는다. 방법은 블록 목록 두 개를 비교하는 것이다.</p>
+  <figure>
+    <div class="diag" data-diag="delta"></div>
+    <figcaption>v2 목록을 기록하고 블록 d48b 하나만 새로 저장한다</figcaption>
+  </figure>
+  <script>bk('delta',{w:960,h:200,x:170,cw:96,rows:[
+    {y:16,label:'v1 블록 목록',cells:[['a1f3'],['7c0e'],['3b9d'],['e52a']]},
+    {y:76,label:'v2 블록 목록',cells:[['a1f3'],['d48b','c'],['3b9d'],['e52a']],note:'다른 해시는 d48b 하나뿐 → 이것만 업로드'},
+    {y:146,label:'S3',cells:[['a1f3','o'],['7c0e','o'],['3b9d','o'],['e52a','o'],['d48b','c']],note:'7c0e는 v1이 쓰고 있으니 남긴다'}
+  ]})</script>
+  <ol>
+    <li>클라이언트가 고친 파일을 다시 자르고 해시를 계산해 v2 목록을 만든다.</li>
+    <li>v1 목록과 비교하면 두 번째 해시만 다르다. d48b 블록 하나(4MB)만 올린다. 14MB 파일을 고쳤는데 전송량은 4MB다.</li>
+    <li>메타데이터 DB에 v2 목록을 기록한다.</li>
+  </ol>
+  <p>S3에서 덮어쓰는 블록은 없다. 7c0e는 v1 목록이 계속 가리키므로 남는다. 덕분에 갱신 이력이 덤으로 생긴다. v1으로 되돌리려면 최신 버전이 v1 목록을 가리키게 바꾸면 된다.</p>
+
+  <div class="extra">
+    <h3><span class="tag add">보충</span>파일은 클라이언트가 쪼개야 한다</h3>
+    <p>책의 설계에서는 블록 저장소 서버가 파일을 쪼갠다. 그러면 클라이언트는 파일 전체를 블록 저장소 서버로 보내야 하고, 바뀐 블록만 보내는 구간은 데이터센터 안쪽뿐이다. 1절에서 아끼려던 것은 사용자의 모바일 데이터였는데, 정작 그 구간으로는 14MB가 그대로 나간다.</p>
+    <figure>
+      <div class="diag" data-diag="who"></div>
+      <figcaption>누가 쪼개느냐에 따라 사용자 회선으로 나가는 양이 달라진다</figcaption>
+    </figure>
+    <script>dg('who',{w:1000,h:410,n:[
+      ['ga',10,8,980,160,'grp','책의 설계: 블록 저장소 서버가 쪼갠다'],
+      ['ca',40,50,160,58,'dev','클라이언트','14MB 파일 수정'],
+      ['ba',420,50,180,58,'fn','블록 저장소 서버','쪼개기, 해시 비교'],
+      ['sa',800,50,170,58,'ext','S3'],
+      ['wa',40,124,560,30,'warn','사용자 회선으로는 14MB가 그대로 나간다'],
+      ['gb',10,190,980,212,'grp','클라이언트가 쪼개고 해시를 계산한다','b'],
+      ['cb',40,280,160,58,'dev','클라이언트','쪼개기, 해시 계산'],
+      ['ab',420,208,180,48,'app','API 서버'],
+      ['bb',420,316,180,58,'fn','블록 저장소 서버','압축, 암호화'],
+      ['sb',800,316,170,58,'ext','S3']
+    ],e:[
+      ['ca','ba','파일 14MB 전부',{c:'blk'}],
+      ['ba','sa','바뀐 블록 4MB',{c:'blk'}],
+      ['cb','ab','① 블록 목록 (해시 4개, 수백 바이트)',{f:[100,280],v:[[100,222]],t:[420,222],c:'meta'}],
+      ['ab','cb','② 없는 블록은 d48b',{f:[420,244],v:[[160,244]],t:[160,280],d:1,c:'meta'}],
+      ['cb','bb','③ d48b 4MB만',{c:'blk'}],
+      ['bb','sb','저장',{c:'blk'}]
+    ]})</script>
+    <p>사용자 회선을 아끼려면 클라이언트가 파일을 쪼개고 해시를 계산한 뒤, 서버에 없는 블록만 올려야 한다. 드롭박스 데스크톱 앱도 이렇게 한다. 쪼개기와 해시 계산은 가벼워서 플랫폼마다 구현해도 부담이 작다. 압축과 암호화는 서버에 남겨 둔다.</p>
+
+    <h3><span class="tag add">보충</span>고정 크기 블록의 약점</h3>
+    <p>4MB 경계는 파일 시작에서 4MB, 8MB, 12MB처럼 위치로 정해진다. 내용을 제자리에서 고치면 문제없지만, 맨 앞에 한 글자를 끼워 넣으면 뒤쪽 내용이 전부 한 칸씩 밀려 모든 블록의 해시가 바뀐다. 아래는 4글자를 블록 크기로 삼아 단순화한 예시다. 고정 크기 방식은 4글자마다 자르고, 내용 기준 방식은 마침표 뒤에서 자른다.</p>
+    <figure>
+      <div class="diag" data-diag="cdc"></div>
+      <figcaption>맨 앞에 "흰"을 끼워 넣었을 때 바뀌는 블록 수</figcaption>
+    </figure>
+    <script>bk('cdc',{w:960,h:262,x:250,rows:[
+      {y:16,label:'고정 크기: 원본',cells:[['고양이.'],['강아지.'],['토끼.거'],['북이.']]},
+      {y:70,label:'고정 크기: "흰" 추가',cells:[['흰고양이','c'],['.강아지','c'],['.토끼.','c'],['거북이.','c']],note:'4개 모두 바뀜',warn:1},
+      {y:150,label:'내용 기준: 원본',cells:[['고양이.'],['강아지.'],['토끼.'],['거북이.']]},
+      {y:204,label:'내용 기준: "흰" 추가',cells:[['흰고양이.','c'],['강아지.'],['토끼.'],['거북이.']],note:'1개만 바뀜'}
+    ]})</script>
+    <p>내용 기반 청킹(CDC, content-defined chunking)은 위치 대신 내용을 보고 경계를 정한다. 실제로는 작은 창을 한 바이트씩 밀며 롤링 해시를 계산하고, 해시값이 정해 둔 조건을 만족하는 지점에서 자른다. 끼워 넣은 곳 근처의 블록만 바뀌고 뒤쪽 경계는 그대로 남는다. restic, borg 같은 백업 도구가 이 방식을 쓴다.</p>
+    <p>사진이나 영상처럼 고칠 때마다 파일 전체가 새로 만들어지는 경우는 어느 방식을 써도 이득이 작다. 책의 설계와 드롭박스는 고정 크기 블록을 쓴다.</p>
+  </div>
+</section>
+
+<!-- 06 -->
+<section id="s6">
+  <h2><span class="no">06</span>업로드 전체 흐름</h2>
+  <p class="pg">책 289쪽, 292~293쪽</p>
+  <p>4절과 5절을 합치면 업로드는 "블록 목록부터 커밋해 보고, 서버에 없는 블록만 올린다"는 흐름이 된다. 드롭박스가 기술 블로그에서 소개한 동기화 방식과 같다.</p>
+  <figure>
+    <div class="diag" data-diag="upload"></div>
+    <figcaption>클라이언트 1이 보고서.docx를 고쳐서 올리는 과정</figcaption>
+  </figure>
+  <script>sq('upload',{w:1040,mg:75,bw:130,k:{c:'dev',api:'app',db:'db',blk:'fn',s3:'ext',noti:'sch'},p:[['c','클라이언트 1'],['api','API 서버'],['db','메타데이터 DB'],['blk','블록 저장소\n서버'],['s3','S3'],['noti','알림 서비스']],m:[
+    ['n','c','파일을 쪼개고 해시 계산 → v2 목록'],
+    ['c','api','① 커밋 (기준 v1, 해시 4개)'],
+    ['api','db','없는 해시 조회'],
+    ['db','api','d48b가 없음',1],
+    ['api','c','② 블록 d48b가 필요함',1],
+    ['c','blk','③ d48b 업로드 (4MB)'],
+    ['blk','s3','압축, 암호화 후 저장'],
+    ['blk','c','저장 완료',1],
+    ['c','api','④ 다시 커밋 (같은 목록)'],
+    ['api','db','v2 기록, 변경 기록 추가'],
+    ['api','c','커밋 완료',1],
+    ['api','noti','⑤ 폴더에 변경 발생']
+  ]})</script>
+  <div class="tbl wrap1"><table>
+    <tr><th>얻는 것</th><th>이 흐름에서 처리되는 방식</th></tr>
+    <tr><td>델타 동기화</td><td>서버에 없는 블록만 올린다.</td></tr>
+    <tr><td>중복 제거</td><td>이미 있는 블록이면 서버가 요청하지 않는다. 같은 파일을 다른 폴더에 복사하면 블록을 하나도 올리지 않는다.</td></tr>
+    <tr><td>이어 올리기</td><td>끊겨도 다시 커밋하면 서버가 아직 없는 블록만 다시 요청한다.</td></tr>
+    <tr><td>충돌 감지</td><td>커밋할 때 기준 버전을 비교한다(<a href="#s9">9절</a>).</td></tr>
+    <tr><td>완전한 버전만 공개</td><td>블록이 다 올라간 뒤에 새 버전을 커밋하므로, 다른 단말이 반쯤 올라간 파일을 받을 일이 없다.</td></tr>
+  </table></div>
+  <p>블록 저장소 서버는 받은 블록을 압축한 다음 암호화해서 S3에 넣는다.</p>
+  <figure>
+    <div class="diag" data-diag="pipe"></div>
+    <figcaption>그림 15-11을 블록 하나 기준으로 줄인 그림</figcaption>
+  </figure>
+  <script>dg('pipe',{w:900,h:150,n:[
+    ['b',20,40,140,56,'st','블록','4MB 원본'],
+    ['z',230,40,180,56,'fn','압축','텍스트는 gzip, bzip2'],
+    ['e',480,40,150,56,'fn','암호화'],
+    ['s',700,40,180,56,'ext','S3'],
+    ['n1',220,106,200,30,'note','JPEG, MP4, ZIP은 건너뜀']
+  ],e:[['b','z'],['z','e'],['e','s','저장']]})</script>
+  <p>순서는 압축이 먼저다. 암호화된 데이터는 무작위 바이트처럼 보여서 압축되지 않는다. 이미 압축된 형식은 다시 압축해도 거의 줄지 않으므로 건너뛴다.</p>
+  <div class="callout">책은 업로드 순서가 다르다. 메타데이터를 먼저 "대기 중"으로 기록하고 파일을 올린 뒤, S3의 완료 콜백을 받아 "완료"로 바꾼다. 위 흐름은 블록이 다 올라간 뒤 한 번에 커밋하므로 대기 상태와 콜백이 필요 없다.</div>
+</section>
+
+<!-- 07 -->
+<section id="s7">
+  <h2><span class="no">07</span>다른 단말이 알아채기</h2>
+  <p class="pg">책 295~296쪽</p>
+  <p>노트북에서 커밋이 끝나면 휴대폰에 그 사실을 알려야 한다. 서버가 클라이언트에 먼저 알리는 방법으로 책은 롱 폴링과 웹소켓을 비교한 뒤 롱 폴링을 고른다. 알림은 서버에서 클라이언트로 가는 한 방향이고, 자주 생기지 않으며, 양도 적기 때문이다. 웹소켓은 채팅처럼 양방향으로 자주 주고받는 서비스에 맞다. 드롭박스도 롱 폴링을 쓴다.</p>
+  <figure>
+    <div class="diag" data-diag="longpoll"></div>
+    <figcaption>알림은 "바뀐 게 있다"는 신호만 주고, 내용은 API 서버에서 따로 받는다</figcaption>
+  </figure>
+  <script>sq('longpoll',{w:880,mg:150,bw:140,k:{c:'dev',noti:'sch',api:'app'},p:[['c','클라이언트 2'],['noti','알림 서비스'],['api','API 서버']],m:[
+    ['c','noti','① 롱 폴링 요청 (커서 41)'],
+    ['n','noti','변경이 생길 때까지 응답을 미룬다'],
+    ['noti','c','changes: true',1],
+    ['c','api','② 커서 41 이후 변경 내역 요청'],
+    ['api','c','변경 내역 + 새 커서 42',1],
+    ['n','c','바뀐 블록만 받아 파일 재조립 (8절)'],
+    ['c','noti','③ 롱 폴링 다시 요청 (커서 42)'],
+    ['n','noti','변경 없이 타임아웃되면 changes: false → 곧바로 다시 요청']
+  ]})</script>
+  <ul>
+    <li>클라이언트가 요청을 보내면 서버는 변경이 생기거나 타임아웃이 될 때까지 응답을 미룬다. 응답을 받으면 클라이언트는 곧바로 다시 요청한다.</li>
+    <li>알림에는 "바뀐 게 있다"는 신호만 담는다. 무엇이 바뀌었는지는 API 서버에서 따로 받는다.</li>
+  </ul>
+
+  <div class="extra">
+    <h3><span class="tag add">보충</span>꺼져 있던 단말은 커서로 따라잡는다</h3>
+    <p>책은 접속하지 않은 단말의 변경 정보를 "오프라인 사용자 백업 큐"에 쌓아 둔다고 한다. 이러면 단말마다 큐가 하나씩 필요하고, 오래 꺼져 있던 단말의 큐는 끝없이 쌓인다. 실제 서비스에서는 보통 변경 기록과 커서를 쓴다. 폴더마다 변경 기록에 순번을 붙여 남기고, 단말은 마지막으로 반영한 순번 하나만 기억한다.</p>
+    <figure>
+      <div class="diag" data-diag="journal"></div>
+      <figcaption>노트북은 43번까지, 휴대폰은 41번까지 반영한 상태</figcaption>
+    </figure>
+    <script>bk('journal',{w:960,h:200,x:190,cw:150,rows:[
+      {y:16,label:'변경 기록 (폴더 공용)',cells:[['40 a.txt 추가','m'],['41 soup.txt 수정','m'],['42 cat.jpg 추가','m'],['43 old.txt 삭제','m']]},
+      {y:86,label:'노트북 (커서 43)',cells:[['반영함'],['반영함'],['반영함'],['반영함']],note:'받을 것 없음'},
+      {y:146,label:'휴대폰 (커서 41)',cells:[['반영함'],['반영함'],['42 받기','c'],['43 받기','c']],note:'41 이후만 요청'}
+    ]})</script>
+    <ul>
+      <li>휴대폰은 다시 켜지면 "41 이후 변경분"을 한 번 요청해 42, 43을 받는다.</li>
+      <li>알림을 놓쳐도 잃는 변경이 없다. 다음에 커서로 물어보면 빠진 변경이 모두 나온다. 알림 서버가 죽어도 데이터는 안전하다.</li>
+      <li>변경 기록을 메타데이터 DB에 두면 파일 정보 변경과 같은 트랜잭션으로 묶을 수 있다.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- 08 -->
+<section id="s8">
+  <h2><span class="no">08</span>내려받아 다시 조립하기</h2>
+  <p class="pg">책 294~295쪽</p>
+  <p>받는 쪽도 블록 목록을 비교한다. 새 목록에는 있는데 내 단말에 없는 블록만 내려받는다.</p>
+  <figure>
+    <div class="diag" data-diag="download"></div>
+    <figcaption>그림 15-15에 블록 비교와 재조립 단계를 더한 다운로드 과정</figcaption>
+  </figure>
+  <script>sq('download',{w:1040,mg:75,bw:130,k:{c2:'dev',noti:'sch',api:'app',db:'db',blk:'fn',s3:'ext'},p:[['c2','클라이언트 2'],['noti','알림 서비스'],['api','API 서버'],['db','메타데이터 DB'],['blk','블록 저장소\n서버'],['s3','S3']],m:[
+    ['noti','c2','changes: true (롱 폴링 응답)',1],
+    ['c2','api','① 커서 41 이후 변경 요청'],
+    ['api','db','변경 기록 조회'],
+    ['db','api','파일 42가 v2로 바뀜',1],
+    ['api','c2','v2 블록 목록 + 새 커서 42',1],
+    ['n','c2','내 v1 목록과 비교 → d48b만 없음'],
+    ['c2','blk','② d48b 다운로드'],
+    ['blk','s3','블록 요청'],
+    ['s3','blk','블록 반환',1],
+    ['blk','c2','복호화, 압축 해제 후 반환',1],
+    ['n','c2','③ 파일 재조립 후 교체']
+  ]})</script>
+  <figure>
+    <div class="diag" data-diag="rebuild"></div>
+    <figcaption>③ 재조립: 가진 블록과 받은 블록을 목록 순서대로 이어 붙인다</figcaption>
+  </figure>
+  <script>bk('rebuild',{w:960,h:190,x:170,cw:96,rows:[
+    {y:16,label:'내 단말의 v1',cells:[['a1f3'],['7c0e'],['3b9d'],['e52a']],note:'이미 가진 블록'},
+    {y:76,label:'새로 받은 블록',cells:[['','g'],['d48b','c'],['','g'],['','g']],note:'v2 목록에는 있고 내게는 없는 것만'},
+    {y:136,label:'조립한 v2',cells:[['a1f3'],['d48b','c'],['3b9d'],['e52a']],note:'임시 파일에 쓴 뒤 이름을 바꿔 교체'}
+  ]})</script>
+  <p>책이 말하는 "파일 재구성"은 블록을 제자리에 끼워 넣는 일이 아니다. 내 단말에 있는 블록과 새로 받은 블록을 목록 순서대로 이어 붙여 파일을 새로 만들고, 임시 파일에 다 쓴 뒤 원래 파일과 이름을 바꾼다. 중간에 끊겨도 원래 파일은 그대로다.</p>
+  <p>받는 도중에 누가 v3을 올려도 v2와 v3이 섞이지 않는다. v2 목록이 가리키는 블록은 바뀌지 않기 때문이다. v2를 다 받은 뒤 v3 알림을 받아 한 번 더 동기화한다.</p>
+</section>
+
+<!-- 09 -->
+<section id="s9">
+  <h2><span class="no">09</span>동시에 고치면</h2>
+  <p class="pg">책 286쪽</p>
+  <p>두 사람이 같은 파일을 동시에 고치면, 책은 먼저 처리된 쪽이 이기고 나중 쪽은 충돌로 처리한다고만 한다. <span class="tag add">보충</span> 판단 기준은 도착 시각이 아니라 <b>어느 버전을 고쳤는지</b>다. 클라이언트는 커밋할 때 자기가 고친 기준 버전을 함께 보내고, 서버는 그 버전이 지금도 최신일 때만 갱신한다.</p>
+<pre>UPDATE file
+   SET latest_version = 5
+ WHERE id = 42
+   AND latest_version = 4;   -- 클라이언트가 보낸 기준 버전
+-- 갱신된 행이 0개면 누군가 먼저 v5를 만든 것이므로 충돌</pre>
+  <figure>
+    <div class="diag" data-diag="conflict"></div>
+    <figcaption>두 클라이언트가 모두 v4를 고쳐서 올린 경우</figcaption>
+  </figure>
+  <script>sq('conflict',{w:900,mg:80,bw:130,k:{c1:'dev',c2:'dev',api:'app',db:'db'},p:[['c1','클라이언트 1'],['c2','클라이언트 2'],['api','API 서버'],['db','메타데이터 DB']],m:[
+    ['n','c1','둘 다 v4를 받아서 고치는 중','c2'],
+    ['c1','api','커밋 (파일 42, 기준 v4)'],
+    ['api','db','latest_version = 4일 때만 갱신'],
+    ['db','api','1행 갱신',1],
+    ['api','c1','성공, 이제 v5',1],
+    ['c2','api','커밋 (파일 42, 기준 v4)'],
+    ['api','db','latest_version = 4일 때만 갱신'],
+    ['db','api','0행 갱신 (이미 v5)',1],
+    ['api','c2','충돌: 최신 버전은 v5',1],
+    ['x','c2','내 수정본은 충돌 사본으로 따로 저장'],
+    ['c2','api','v5를 받아 원래 파일을 최신으로 맞춤']
+  ]})</script>
+  <p>충돌 난 쪽은 자기 수정본을 별도 파일로 남기고, 원래 파일은 최신 버전으로 맞춘다. 두 내용이 모두 남고, 합치는 일은 사용자가 한다.</p>
+  <figure>
+    <div class="diag" data-diag="cfiles"></div>
+    <figcaption>그림 15-9 충돌 뒤 폴더에 나란히 보이는 두 파일</figcaption>
+  </figure>
+  <script>bk('cfiles',{w:960,h:130,x:170,rows:[
+    {y:16,label:'원래 파일',cells:[['보고서.docx','o',null,440]],note:'서버 최신 v5 (클라이언트 1의 수정)'},
+    {y:76,label:'충돌 사본',cells:[['보고서 (클라이언트 2의 충돌 사본).docx','c',null,440]],note:'클라이언트 2의 수정, 새 파일로 저장'}
+  ]})</script>
+  <p>남이 고친 v5가 도착했을 때 내 단말에 아직 올리지 않은 수정이 있으면 같은 방식으로 처리한다. 내 파일의 기준 버전(v4)이 서버 최신(v5)과 다르므로 충돌이고, 내 수정은 덮어쓰지 않고 충돌 사본으로 남긴다.</p>
+  <p>사진이나 엑셀 같은 바이너리 파일에는 일반적인 병합 규칙이 없어서 자동으로 합치지 않는다. 구글 문서처럼 동시 편집이 되는 서비스는 OT나 CRDT 같은 별도 기법을 쓰며, 이 장의 범위가 아니다.</p>
+</section>
+
+<!-- 10 -->
+<section id="s10">
+  <h2><span class="no">10</span>데이터 모델</h2>
+  <p class="pg">책 291~292쪽</p>
+  <p>지금까지 나온 정보를 테이블로 옮기면 다음과 같다. 초록색 테이블은 책 스키마에 없던 것이다.</p>
+  <figure>
+    <div class="diag" data-diag="erd"></div>
+    <figcaption>메타데이터 DB 스키마. 선은 1:N 관계</figcaption>
+  </figure>
+  <script>dg('erd',{w:1000,h:450,n:[
+    ['user',20,20,190,86,'db','user','user_id\nuser_name\ncreated_at'],
+    ['device',20,180,190,100,'db','device','device_id\nuser_id\npush_id\nlast_logged_in_at'],
+    ['ns',270,20,190,86,'db','namespace (폴더)','id\nowner_id\nis_shared'],
+    ['file',520,16,210,112,'db','file','id\nnamespace_id\nfile_name, relative_path\nis_directory\nlatest_version'],
+    ['fv',520,190,210,112,'db','file_version','id\nfile_id\ndevice_id\nversion_number\nstatus'],
+    ['fvb',780,190,200,100,'sch','file_version_block','file_version_id\nblock_order\nblock_hash'],
+    ['block',780,340,200,100,'sch','block','hash (PK)\nsize\nstorage_key'],
+    ['jr',270,330,190,100,'sch','journal (변경 기록)','namespace_id\nseq\nfile_id, 동작, 버전']
+  ],e:[
+    ['user','ns'],['user','device'],['ns','file'],['file','fv'],['device','fv'],['fv','fvb'],['fvb','block'],['ns','jr']
+  ]})</script>
+  <div class="tbl wrap1"><table>
+    <tr><th>테이블</th><th>담는 것</th></tr>
+    <tr><td>user, device</td><td>사용자와 단말. 한 사용자가 단말을 여러 대 쓴다. push_id는 모바일 푸시 알림용이다.</td></tr>
+    <tr><td>namespace</td><td>사용자의 루트 폴더. 공유 폴더도 namespace로 표현한다.</td></tr>
+    <tr><td>file</td><td>파일의 현재 정보와 최신 버전 번호</td></tr>
+    <tr><td>file_version</td><td>버전마다 한 줄. 읽기 전용이라 이력이 훼손되지 않는다.</td></tr>
+    <tr><td>file_version_block</td><td>버전 하나가 어떤 블록을 어떤 순서로 쓰는지</td></tr>
+    <tr><td>block</td><td>블록 내용 하나에 한 줄. 해시가 키다.</td></tr>
+    <tr><td>journal</td><td>7절의 변경 기록</td></tr>
+  </table></div>
+  <div class="callout add"><span class="tag add">보충</span>책 스키마(그림 15-13)의 block 테이블에는 해시 컬럼이 없고, 블록 행 하나가 버전 하나에 묶여 있다. 이러면 v1과 v2가 같은 블록을 함께 쓰는 모습을 나타낼 수 없다. 그래서 블록 내용(block)과 버전별 블록 순서(file_version_block)를 나눴다. 본문에 나오는 device의 push_id와 업로드 상태(status)도 책의 그림에는 빠져 있다.</div>
+</section>
+
+<!-- 11 -->
+<section id="s11">
+  <h2><span class="no">11</span>저장 공간과 장애</h2>
+  <p class="pg">책 296~298쪽</p>
+
+  <h3>저장 공간 줄이기</h3>
+  <figure>
+    <div class="diag" data-diag="storage"></div>
+    <figcaption>복사본은 같은 블록을 가리키고, 오래된 블록은 콜드 스토리지로 옮긴다</figcaption>
+  </figure>
+  <script>dg('storage',{w:960,h:300,n:[
+    ['v2',20,30,280,50,'src','보고서.docx (최신 v2)'],
+    ['cp',20,125,280,50,'src','보고서 사본.docx (복사본)'],
+    ['v1',20,220,280,50,'src','보고서.docx v1 (1년 전 버전)'],
+    ['hot',420,10,260,280,'grp','S3: 자주 쓰는 블록','b'],
+    ['cold',730,10,210,280,'grp','콜드 스토리지','b'],
+    ['d',470,32,160,46,'ext','d48b'],
+    ['a',470,127,160,46,'ext','a1f3'],
+    ['o',760,200,150,46,'ext','7c0e']
+  ],e:[
+    ['v2','d','',{c:'blk'}],['v2','a','',{c:'blk'}],
+    ['cp','a','복사본도 같은 블록을 가리킴',{c:'blk',lp:[385,150]}],['cp','d','',{c:'blk'}],
+    ['v1','a','',{c:'blk'}],['v1','o','오래되어 옮겨진 블록',{c:'blk'}]
+  ]})</script>
+  <div class="tbl wrap1"><table>
+    <tr><th>방법</th><th>내용</th></tr>
+    <tr><td>중복 제거</td><td>같은 해시의 블록은 한 번만 저장한다. 복사본과 이전 버전이 같은 블록을 가리킨다.</td></tr>
+    <tr><td>버전 정리</td><td>보관할 버전 수에 상한을 두고, 자주 바뀌는 파일은 중요한 버전만 남긴다.</td></tr>
+    <tr><td>콜드 스토리지</td><td>몇 달 넘게 쓰지 않은 블록은 S3 글래시어처럼 싼 저장소로 옮긴다. 대신 꺼낼 때 시간이나 비용이 더 든다.</td></tr>
+  </table></div>
+  <div class="callout add"><span class="tag add">보충</span>책은 중복 제거를 계정 단위로 한다. 모든 사용자를 통틀어 제거하면, 업로드가 순식간에 끝나는 것만 보고 다른 사람이 같은 파일을 가졌는지 알아낼 수 있다. 2011년 드롭박스에서는 해시만으로 남의 파일을 가져오는 도구(Dropship)가 공개되기도 했다. 또 버전이 지워져도 블록은 바로 지우지 않는다. 아무 버전도 가리키지 않는 블록만 나중에 지운다.</div>
+
+  <h3>장애 대응</h3>
+  <div class="tbl wrap1"><table>
+    <tr><th>장애</th><th>대응</th></tr>
+    <tr><td>로드밸런서</td><td>부 로드밸런서가 이어받는다. 둘은 박동(heartbeat) 신호로 서로 상태를 확인한다.</td></tr>
+    <tr><td>API 서버</td><td>상태가 없으므로 로드밸런서가 죽은 서버로 요청을 보내지 않으면 된다.</td></tr>
+    <tr><td>블록 저장소 서버</td><td>다른 서버가 끝내지 못한 작업을 이어받는다.</td></tr>
+    <tr><td>S3</td><td>다른 지역의 복제본에서 가져온다.</td></tr>
+    <tr><td>메타데이터 캐시</td><td>복제해 두고, 죽은 노드는 새것으로 바꾼다.</td></tr>
+    <tr><td>메타데이터 DB</td><td>주 서버가 죽으면 부 서버 하나를 주 서버로 올린다. 부 서버가 죽으면 다른 부 서버가 읽기를 맡는다.</td></tr>
+    <tr><td>알림 서비스</td><td>서버 한 대가 롱 폴링 연결을 100만 개 넘게 들고 있다. 한 대가 죽으면 100만 명이 한꺼번에 재접속해야 해서 복구가 느리다. 재접속 전에 무작위로 조금 기다리게 하면 몰림이 줄고, 커서 방식이라 늦게 붙어도 잃는 변경은 없다.</td></tr>
+  </table></div>
+</section>
+
+<!-- 12 -->
+<section id="s12">
+  <h2><span class="no">12</span>한 장으로 정리</h2>
+  <p class="pg">책 298~299쪽</p>
+  <figure>
+    <div class="diag" data-diag="final"></div>
+    <figcaption>클라이언트 1이 고친 파일이 클라이언트 2에 반영되기까지</figcaption>
+  </figure>
+  <script>dg('final',{w:1000,h:470,n:[
+    ['c1',20,10,170,56,'dev','클라이언트 1','파일 수정'],
+    ['c2',810,10,170,56,'dev','클라이언트 2','변경 반영'],
+    ['api',410,110,180,56,'app','API 서버'],
+    ['mdb',410,250,180,56,'db','메타데이터 DB'],
+    ['noti',810,250,170,56,'sch','알림 서비스'],
+    ['blk',20,250,170,56,'fn','블록 저장소 서버'],
+    ['s3',20,390,170,56,'ext','S3']
+  ],e:[
+    ['c1','api','① 블록 목록 커밋',{f:[190,30],v:[[500,30]],t:[500,110],c:'meta'}],
+    ['c1','blk','② 없는 블록만 업로드',{f:[90,66],t:[90,250],c:'blk'}],
+    ['blk','s3','③ 압축, 암호화 후 저장',{c:'blk'}],
+    ['api','mdb','④ 새 버전 기록',{c:'meta',lp:[500,188]}],
+    ['mdb','noti','⑤ 변경 발생',{c:'noti'}],
+    ['noti','c2','⑥ 롱 폴링 응답',{c:'noti',d:1}],
+    ['c2','api','⑦ 변경 내역 조회',{f:[810,45],v:[[560,45]],t:[560,110],c:'meta'}],
+    ['c2','blk','⑧ 없는 블록만 다운로드',{f:[840,66],v:[[840,226],[150,226]],t:[150,250],c:'blk',lp:[300,226]}]
+  ]})</script>
+
+  <h3>면접에서 설명할 결정</h3>
+  <ol>
+    <li>메타데이터와 파일 내용을 나누고, 강한 일관성은 메타데이터에만 건다.</li>
+    <li>파일을 4MB 블록으로 쪼개고 해시를 이름으로 저장한다. 델타 동기화, 중복 제거, 이어 올리기, 갱신 이력이 모두 여기서 나온다.</li>
+    <li>업로드는 블록 목록 커밋 → 없는 블록 업로드 → 다시 커밋 순서로 한다. 커밋할 때 기준 버전을 비교해 충돌을 잡는다.</li>
+    <li>알림은 롱 폴링으로 "바뀐 게 있다"만 알리고, 변경 내역은 커서로 가져간다.</li>
+  </ol>
+
+  <h3>다른 선택지</h3>
+  <div class="tbl wrap1"><table>
+    <tr><th>선택지</th><th>내용</th></tr>
+    <tr><td>클라이언트가 S3에 직접 업로드</td><td>API 서버가 미리 서명된 URL(presigned URL)을 주면 클라이언트가 S3로 바로 올린다. 서버를 거치지 않아 빠르다. 책은 분할, 압축, 암호화를 플랫폼마다 구현해야 하고 클라이언트 쪽 암호화가 위험하다는 점을 단점으로 든다. <span class="tag add">보충</span> 분할은 5절처럼 어차피 클라이언트가 해야 하고, 암호화는 HTTPS와 S3 서버 측 암호화로 대신할 수 있다. 남는 단점은 서버가 업로드 내용을 중간에서 검사하거나 압축하기 어렵다는 점이다.</td></tr>
+    <tr><td>접속 상태 관리 분리</td><td>단말의 접속 상태를 관리하는 로직을 알림 서비스에서 떼어 별도 서비스로 만들면 다른 서비스도 함께 쓸 수 있다.</td></tr>
+  </table></div>
+</section>
+
+<!-- 13 -->
+<section id="s13">
+  <h2><span class="no">13</span>참고 자료</h2>
+  <div class="tbl wrap1"><table>
+    <tr><th>주제</th><th>자료</th></tr>
+    <tr><td>S3, 글래시어</td><td>책 참고문헌 [3] https://aws.amazon.com/s3, [11] https://aws.amazon.com/glacier/faqs/</td></tr>
+    <tr><td>드롭박스 구조</td><td>책 참고문헌 [6] How We've Scaled Dropbox: https://youtu.be/PE4gwstWhmc</td></tr>
+    <tr><td>델타 동기화</td><td>책 참고문헌 [7] The rsync algorithm (1996), [8] https://github.com/librsync/librsync</td></tr>
+    <tr><td>동시 편집</td><td>책 참고문헌 [4] https://neil.fraser.name/writing/sync/</td></tr>
+    <tr><td>블록 커밋 흐름</td><td>Dropbox Tech Blog, "Streaming File Synchronization" (2014)</td></tr>
+    <tr><td>내용 기반 청킹</td><td>Muthitacharoen, Chen, Mazières, "A Low-bandwidth Network File System" (SOSP 2001)</td></tr>
+    <tr><td>롱 폴링과 커서</td><td>Dropbox API v2 문서, files/list_folder/longpoll, files/list_folder/continue</td></tr>
+  </table></div>
+</section>
+
+</div>
+<script>
+(()=>{
+const NS='http://www.w3.org/2000/svg';
+const mk=(t,a,p)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e};
+const clip=(n,tx,ty)=>{const cx=n.x+n.w/2,cy=n.y+n.h/2,dx=tx-cx,dy=ty-cy;if(!dx&&!dy)return[cx,cy];const t=Math.min(dx?n.w/2/Math.abs(dx):1e9,dy?n.h/2/Math.abs(dy):1e9);return[cx+dx*t,cy+dy*t]};
+const lines=(g,x,y,str,cls,lh)=>{const ps=String(str).split('\n');const t=mk('text',{x,y:y-(ps.length-1)*lh/2,class:cls,'text-anchor':'middle','dominant-baseline':'central'},g);ps.forEach((p,i)=>{const s=mk('tspan',{x,dy:i?lh:0},t);s.textContent=p});return t};
+const label=(L,x,y,lab)=>{const g=mk('g',{class:'el'},L),bg=mk('rect',{rx:3},g),tx=lines(g,x,y,lab,'et',16),bb=tx.getBBox();bg.setAttribute('x',bb.x-4);bg.setAttribute('y',bb.y-2);bg.setAttribute('width',bb.width+8);bg.setAttribute('height',bb.height+4)};
+const K=14/13;
+const mid=(id,c)=>`url(#ah-${id}${c?'-'+c:''})`;
+
+function graph(svg,id,s){
+  const L={g:mk('g',{},svg),e:mk('g',{},svg),n:mk('g',{},svg),l:mk('g',{},svg)};
+  const N={};
+  s.n.forEach(([k,x,y,w,h,kind,t,sub])=>{
+    N[k]={x,y,w,h};
+    if(kind==='grp'){mk('rect',{x,y,width:w,height:h,rx:10,class:'grp'},L.g);const tt=mk('text',{x:x+12,y:sub==='b'?y+h-10:y+18,class:'grp-t'},L.g);tt.textContent=t;return}
+    if(kind==='note'||kind==='warn'){lines(L.n,x+w/2,y+h/2,t,kind,16);return}
+    const g=mk('g',{class:'nd k-'+kind},L.n);
+    mk('rect',{x,y,width:w,height:h,rx:(kind==='dev'||kind==='st'||kind==='err')?14:6},g);
+    const tl=String(t).split('\n').length,sl=sub?String(sub).split('\n').length:0;
+    const tot=tl*16+(sl?4+sl*16:0),top=y+h/2-tot/2;
+    lines(g,x+w/2,top+tl*16/2,t,'nt',16);
+    if(sl)lines(g,x+w/2,top+tl*16+4+sl*16/2,sub,'ns',16);
+  });
+  (s.e||[]).forEach(([a,b,lab,o])=>{
+    o=o||{};const A=N[a],B=N[b],v=o.v||[];
+    const cb=[B.x+B.w/2,B.y+B.h/2];
+    const p0=o.f||clip(A,...(v[0]||o.t||cb));
+    const p1=o.t||clip(B,...(v.length?v[v.length-1]:p0));
+    const pts=[p0,...v,p1];
+    const at={points:pts.map(p=>p.join(',')).join(' '),class:'edge'+(o.d?' dash':'')+(o.c?' c-'+o.c:''),'marker-end':mid(id,o.c)};
+    if(o.b)at['marker-start']=mid(id,o.c);
+    mk('polyline',at,L.e);
+    if(!lab)return;
+    let lp=o.lp;
+    if(!lp){let bi=0,bl=-1;for(let i=0;i<pts.length-1;i++){const l=Math.hypot(pts[i+1][0]-pts[i][0],pts[i+1][1]-pts[i][1]);if(l>bl){bl=l;bi=i}}lp=[(pts[bi][0]+pts[bi+1][0])/2,(pts[bi][1]+pts[bi+1][1])/2]}
+    label(L.l,lp[0],lp[1],lab);
+  });
+}
+
+function seq(svg,id,s){
+  const n=s.p.length,mg=s.mg||70,step=s.step||42,bw=s.bw||120,top=4,bh=42,P={};
+  s.p.forEach(([k],i)=>{P[k]=n>1?mg+i*(s.w-2*mg)/(n-1):s.w/2});
+  const y0=top+bh+44,H=y0+(s.m.length-1)*step+28;
+  svg.setAttribute('viewBox',`0 0 ${s.w} ${H}`);
+  const L={l:mk('g',{},svg),e:mk('g',{},svg),n:mk('g',{},svg),t:mk('g',{},svg)};
+  s.p.forEach(([k,t])=>{
+    const x=P[k];
+    mk('line',{x1:x,y1:top+bh,x2:x,y2:H-4,class:'life'},L.l);
+    const g=mk('g',{class:'nd k-'+((s.k||{})[k]||'st')},L.n);
+    mk('rect',{x:x-bw/2,y:top,width:bw,height:bh,rx:6},g);
+    lines(g,x,top+bh/2,t,'nt',16);
+  });
+  s.m.forEach((r,i)=>{
+    const y=y0+i*step;
+    if(r[0]==='n'||r[0]==='x'){
+      const x1=P[r[1]],x2=r[3]?P[r[3]]:x1;
+      const g=mk('g',{class:'nd k-'+(r[0]==='x'?'err':'st')},L.t),bg=mk('rect',{rx:5},g);
+      const tx=lines(g,0,y,r[2],'ns2',16),bb=tx.getBBox();
+      const w=Math.max(bb.width+22,Math.abs(x2-x1)+44);
+      const cx=Math.max(w/2+2,Math.min(s.w-w/2-2,(x1+x2)/2));
+      tx.setAttribute('x',cx);tx.querySelectorAll('tspan').forEach(t=>t.setAttribute('x',cx));
+      bg.setAttribute('x',cx-w/2);bg.setAttribute('y',bb.y-6);bg.setAttribute('width',w);bg.setAttribute('height',bb.height+12);
+      return;
+    }
+    const [a,b,lab,d]=r,xa=P[a],xb=P[b];
+    mk('line',{x1:xa,y1:y,x2:xb,y2:y,class:'edge'+(d?' dash':''),'marker-end':mid(id)},L.e);
+    if(lab){const c=String(lab).split('\n').length;label(L.t,(xa+xb)/2,y-9-8*c,lab)}
+  });
+}
+
+function blocks(svg,id,s){
+  const ch=s.ch||40,gap=s.gap||8;
+  (s.ar||[]).forEach(([x1,y1,x2,y2])=>mk('line',{x1,y1,x2,y2,class:'edge','marker-end':mid(id)},svg));
+  s.rows.forEach(r=>{
+    let x=r.x||s.x||170;const y=r.y;
+    if(r.label){const t=mk('text',{x:x-14,y:y+ch/2,class:'lab','text-anchor':'end','dominant-baseline':'central'},svg);t.textContent=r.label}
+    r.cells.forEach(([t,st,sub,w0])=>{
+      const w=w0||r.cw||s.cw||Math.max(48,[...String(t)].length*15+22);
+      const g=mk('g',{class:'bk bk-'+(st||'s')},svg);
+      mk('rect',{x,y,width:w,height:ch,rx:5},g);
+      if(t)lines(g,x+w/2,y+ch/2,t,'bt',15);
+      if(sub){const tt=mk('text',{x:x+w/2,y:y+ch+15,class:'ns','text-anchor':'middle'},svg);tt.textContent=sub}
+      x+=w+gap;
+    });
+    if(r.note){const tt=mk('text',{x:x+6,y:y+ch/2,class:r.warn?'warn':'note','dominant-baseline':'central'},svg);tt.textContent=r.note}
+  });
+}
+
+function render(){
+  document.querySelectorAll('[data-diag]').forEach(host=>{
+    const id=host.dataset.diag,s=(window.DIAG||{})[id];if(!s)return;
+    host.innerHTML='';
+    const svg=mk('svg',{viewBox:`0 0 ${s.w} ${s.h||100}`,class:'dg',role:'img'},host);
+    svg.style.width=(s.w*K)+'px';
+    const defs=mk('defs',{},svg);
+    ['','meta','blk','noti'].forEach(c=>{
+      const m=mk('marker',{id:'ah-'+id+(c?'-'+c:''),viewBox:'0 0 10 10',refX:9,refY:5,markerWidth:9,markerHeight:9,markerUnits:'userSpaceOnUse',orient:'auto-start-reverse'},defs);
+      mk('path',{d:'M0,0L10,5L0,10z',class:'ah'+(c?' c-'+c:'')},m);
+    });
+    (s.t==='sq'?seq:s.t==='bk'?blocks:graph)(svg,id,s);
+  });
+}
+render();
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(render);
+})();
+</script>
+</body>
+</html>
